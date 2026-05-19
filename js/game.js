@@ -6,6 +6,7 @@ const Game = (() => {
 
   const GALLERY_MAX  = 7;
   const BLACKOUT_MAX = 5;
+  const HAIKU_LENGTH = 3;
 
   let state = null;
 
@@ -21,49 +22,57 @@ const Game = (() => {
   // ── Public API ───────────────────────────────────────
 
   function init(playerNames) {
+    // Distribute unique 16-verse hands to each player from the pool.
+    const shuffledVerses = shuffle(VERSES.slice());
+    let cursor = 0;
+
+    const players = playerNames.map((name, id) => {
+      const hand = shuffledVerses
+        .slice(cursor, cursor + VERSES_PER_PLAYER)
+        .map(v => v.id);
+      cursor += VERSES_PER_PLAYER;
+      return { id, name, verseHand: hand };
+    });
+
     state = {
       phase: 'turn-reveal',
 
-      players: playerNames.map((name, id) => ({ id, name })),
-      secretIndex: 0,          // which player is currently in secret phase
+      players,
+      secretIndex: 0,
 
       paintingPool: shuffle(PAINTINGS.slice()),
-      poolOffset: 0,           // next painting to draw
+      poolOffset: 0,
 
       turnIndex: 0,
-      turnPaintings: [],        // 6 paintings for current turn
+      turnPaintings: [],
 
-      choices: [],              // [{playerId, paintingId, verseA, verseB, verseC}]
+      choices: [],
       draft: emptyDraft(),
 
-      // {playerId: guessedPaintingId} — collective assignment
       guesses: {},
-
-      // painting id currently highlighted in deduction (right-panel active)
       activeDeductionPlayer: null,
 
       galleryProgress: 0,
       blackoutProgress: 0,
-      lastResolution: null,     // filled by resolveRound()
+      lastResolution: null,
+
+      zoomedPaintingId: null,
     };
 
     pickTurnPaintings();
   }
 
   function emptyDraft() {
-    return { paintingId: null, verseA: null, verseB: null, verseC: null };
+    return { paintingId: null, selectedVerses: [] };
   }
 
   function pickTurnPaintings() {
-    const start = state.poolOffset;
-    const end   = start + 6;
-    if (end > state.paintingPool.length) {
-      // reshuffle once pool is exhausted
+    if (state.poolOffset + 6 > state.paintingPool.length) {
       state.paintingPool = shuffle(PAINTINGS.slice());
-      state.poolOffset   = 0;
+      state.poolOffset = 0;
     }
     state.turnPaintings = state.paintingPool.slice(state.poolOffset, state.poolOffset + 6);
-    state.poolOffset   += 6;
+    state.poolOffset += 6;
   }
 
   // Turn reveal → begin secret phase for player 0
@@ -75,42 +84,58 @@ const Game = (() => {
     state.phase       = 'pass-before';
   }
 
-  // Shown after pass screen — player sees paintings to pick
+  // Shown after pass screen — player enters the compose phase
   function playerReady() {
-    state.phase = 'secret-pick';
+    state.phase = 'secret-compose';
   }
+
+  // ── Compose actions ───────────────────────────────────
 
   function selectPainting(paintingId) {
     state.draft.paintingId = paintingId;
   }
 
-  function confirmPick() {
-    if (state.draft.paintingId === null) return;
-    state.phase = 'secret-haiku';
+  function addVerse(verseId) {
+    const d = state.draft;
+    if (d.selectedVerses.length >= HAIKU_LENGTH) return;
+    if (d.selectedVerses.includes(verseId)) return;
+    d.selectedVerses.push(verseId);
   }
 
-  function selectVerse(verseId, group) {
-    const key = 'verse' + group; // verseA / verseB / verseC
-    state.draft[key] = verseId;
+  function removeVerse(verseId) {
+    state.draft.selectedVerses = state.draft.selectedVerses.filter(v => v !== verseId);
+  }
+
+  function moveVerse(verseId, direction) {
+    const arr = state.draft.selectedVerses;
+    const idx = arr.indexOf(verseId);
+    if (idx === -1) return;
+    if (direction === 'up' && idx > 0) {
+      [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+    } else if (direction === 'down' && idx < arr.length - 1) {
+      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+    }
+  }
+
+  function isDraftReady() {
+    const d = state.draft;
+    return d.paintingId !== null && d.selectedVerses.length === HAIKU_LENGTH;
   }
 
   function confirmChoice() {
+    if (!isDraftReady()) return;
     const d = state.draft;
-    if (d.paintingId === null || d.verseA === null || d.verseB === null || d.verseC === null) return;
 
     state.choices.push({
       playerId:   state.players[state.secretIndex].id,
       paintingId: d.paintingId,
-      verseA: d.verseA,
-      verseB: d.verseB,
-      verseC: d.verseC,
+      verses:     d.selectedVerses.slice(),
     });
 
     const isLast = state.secretIndex === state.players.length - 1;
     if (isLast) {
-      // All players done → deduction
-      state.draft  = emptyDraft();
-      state.phase  = 'deduction';
+      state.draft = emptyDraft();
+      state.phase = 'deduction';
       state.activeDeductionPlayer = state.players[0].id;
     } else {
       state.secretIndex++;
@@ -119,16 +144,25 @@ const Game = (() => {
     }
   }
 
-  // Deduction: select which haiku card to assign
+  // ── Modal (zoom) ──────────────────────────────────────
+
+  function zoomPainting(paintingId) {
+    state.zoomedPaintingId = paintingId;
+  }
+
+  function closeZoom() {
+    state.zoomedPaintingId = null;
+  }
+
+  // ── Deduction ─────────────────────────────────────────
+
   function activateDeductionPlayer(playerId) {
     state.activeDeductionPlayer = playerId;
   }
 
-  // Deduction: assign active haiku to a painting
   function assignGuess(paintingId) {
     if (state.activeDeductionPlayer === null) return;
     state.guesses[state.activeDeductionPlayer] = paintingId;
-    // Auto-advance to next unassigned haiku
     const unassigned = state.players.find(
       p => state.guesses[p.id] === undefined && p.id !== state.activeDeductionPlayer
     );
@@ -150,26 +184,17 @@ const Game = (() => {
     const items = state.players.map(player => {
       const choice  = state.choices.find(c => c.playerId === player.id);
       const guessed = state.guesses[player.id];
-      const correct = choice && guessed === choice.paintingId;
+      const correct = !!choice && guessed === choice.paintingId;
       if (!correct) allCorrect = false;
 
       const painting = state.turnPaintings.find(p => p.id === choice?.paintingId);
       const guessedPainting = state.turnPaintings.find(p => p.id === guessed);
 
-      return {
-        player,
-        choice,
-        painting,
-        guessedPainting,
-        correct,
-      };
+      return { player, choice, painting, guessedPainting, correct };
     });
 
-    if (allCorrect) {
-      state.galleryProgress++;
-    } else {
-      state.blackoutProgress++;
-    }
+    if (allCorrect) state.galleryProgress++;
+    else            state.blackoutProgress++;
 
     state.lastResolution = { items, allCorrect };
   }
@@ -181,8 +206,7 @@ const Game = (() => {
   }
 
   function nextTurn() {
-    const over = checkGameOver();
-    if (over) {
+    if (checkGameOver()) {
       state.phase = 'end';
       return;
     }
@@ -191,24 +215,41 @@ const Game = (() => {
     state.phase = 'turn-reveal';
   }
 
+  // ── Accessors ────────────────────────────────────────
+
   function getState() { return state; }
 
-  function getConstants() { return { GALLERY_MAX, BLACKOUT_MAX }; }
+  function getConstants() {
+    return { GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };
+  }
+
+  function currentPlayer() {
+    return state.players[state.secretIndex];
+  }
+
+  function setPhase(phase) { state.phase = phase; }
 
   return {
     init,
     getState,
     getConstants,
+    currentPlayer,
+    setPhase,
     beginSecretPhase,
     playerReady,
     selectPainting,
-    confirmPick,
-    selectVerse,
+    addVerse,
+    removeVerse,
+    moveVerse,
+    isDraftReady,
     confirmChoice,
+    zoomPainting,
+    closeZoom,
     activateDeductionPlayer,
     assignGuess,
     allGuessesAssigned,
     confirmGuesses,
+    checkGameOver,
     nextTurn,
   };
 

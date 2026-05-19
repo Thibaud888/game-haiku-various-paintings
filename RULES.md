@@ -16,9 +16,12 @@ Rejoignez la **Grande Galerie** avant le **black-out total**.
 | Élément | Quantité |
 |---|---|
 | Cartes Tableau (œuvres du domaine public) | 30 |
-| Vers poétiques (groupe A / B / C) | 16 |
+| Pool de vers poétiques | ~310 |
+| Main de vers par joueur (tirage unique au début) | 16 |
 | Piste Galerie | 7 cases |
 | Piste Black-out | 5 cases |
+
+**Chaque joueur reçoit en début de partie sa propre main de 16 vers**, tirés au hasard du pool. Les mains des joueurs ne se chevauchent pas : chacun a un vocabulaire poétique unique.
 
 ---
 
@@ -54,15 +57,16 @@ Parmi les 6 affichés, le joueur en désigne un secrètement.
 C'est le tableau qu'il souhaite faire deviner à ses coéquipiers.
 
 **b. Composer un haïku**
-Le joueur choisit **un vers dans chacun des trois groupes** :
-
-| Groupe | Rôle | Syllabes |
-|---|---|---|
-| A — Ouverture | Premier vers | ~5 |
-| B — Milieu | Deuxième vers | ~7 |
-| C — Clôture | Troisième vers | ~5 |
+Le joueur choisit **3 vers parmi ses 16**.
+Les vers peuvent être arrangés dans **n'importe quel ordre** : il est
+possible de les déplacer (↑ ↓) ou de les retirer (×) à tout moment
+pendant la composition.
 
 Le haïku (3 lignes) est son message poétique pour les autres.
+
+> **Note** : le choix du tableau et la composition se font sur le
+> **même écran**. Le joueur peut piocher des vers d'abord, choisir un
+> tableau, ou faire les deux en parallèle — l'ordre est libre.
 
 Une fois satisfait, il clique **Valider le haïku** et passe l'écran.
 

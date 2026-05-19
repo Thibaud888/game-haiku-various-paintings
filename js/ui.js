@@ -8,51 +8,83 @@ const UI = (() => {
     const s = Game.getState();
     if (!s) { renderSetup(); return; }
 
+    let html = '';
     switch (s.phase) {
-      case 'turn-reveal':  renderTurnReveal(s); break;
-      case 'pass-before':  renderPassBefore(s); break;
-      case 'secret-pick':  renderSecretPick(s); break;
-      case 'secret-haiku': renderSecretHaiku(s); break;
-      case 'deduction':    renderDeduction(s);   break;
-      case 'resolution':   renderResolution(s);  break;
-      case 'end':          renderEnd(s);          break;
-      default: renderSetup();
+      case 'turn-reveal':    html = htmlTurnReveal(s); break;
+      case 'pass-before':    html = htmlPassBefore(s); break;
+      case 'secret-compose': html = htmlSecretCompose(s); break;
+      case 'deduction':      html = htmlDeduction(s); break;
+      case 'resolution':     html = htmlResolution(s); break;
+      case 'end':            html = htmlEnd(s); break;
+      default: html = '';
     }
+
+    if (s.zoomedPaintingId !== null) {
+      html += htmlZoomModal(s);
+    }
+
+    app().innerHTML = html;
   }
 
   // ── Helpers ─────────────────────────────────────────
 
-  function el(tag, cls, html) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (html !== undefined) e.innerHTML = html;
-    return e;
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  function paintingImgHtml(painting, extraClass = '') {
-    const esc = painting.title.replace(/'/g, '&#39;');
+  function paintingImgHtml(painting) {
+    const title  = escapeHtml(painting.title);
+    const artist = escapeHtml(painting.artist);
+    const fallbackContent = `
+      <div class="fb-title">${title}</div>
+      <div class="fb-artist">${artist}</div>
+      <div class="fb-year">${painting.year}</div>`;
     return `
       <div class="painting-img-wrap">
         <img
           src="${painting.imageUrl}"
-          alt="${esc}"
+          alt="${title}"
+          loading="lazy"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
         >
-        <div class="painting-fallback" style="display:none">
-          <span>${esc}</span>
+        <div class="painting-fallback" style="display:none">${fallbackContent}</div>
+      </div>`;
+  }
+
+  function paintingCardHtml(painting, index, options = {}) {
+    const { selected, guessed, action, dataPaintingId, highlightedAs } = options;
+    const cls = [
+      'painting-card',
+      selected && 'selected',
+      guessed && 'guessed',
+      highlightedAs && 'highlight-' + highlightedAs,
+    ].filter(Boolean).join(' ');
+
+    return `
+      <div class="${cls}"
+           ${action ? `data-action="${action}"` : ''}
+           ${dataPaintingId !== undefined ? `data-painting-id="${dataPaintingId}"` : ''}>
+        ${paintingImgHtml(painting)}
+        ${index !== undefined ? `<div class="painting-number">${index + 1}</div>` : ''}
+        <div class="painting-info">
+          <div class="title">${escapeHtml(painting.title)}</div>
+          <div class="artist">${escapeHtml(painting.artist)}, ${painting.year}</div>
         </div>
       </div>`;
   }
 
   function tracksHtml(s) {
     const { GALLERY_MAX, BLACKOUT_MAX } = Game.getConstants();
-
-    function dots(count, max, cssClass) {
+    function dots(count, max, cls) {
       return Array.from({ length: max }, (_, i) =>
-        `<span class="dot ${cssClass} ${i < count ? 'filled' : ''}"></span>`
+        `<span class="dot ${cls} ${i < count ? 'filled' : ''}"></span>`
       ).join('');
     }
-
     return `
       <div class="tracks">
         <div class="progress-bar">
@@ -67,12 +99,11 @@ const UI = (() => {
   }
 
   function verseText(verseId) {
-    if (verseId === null) return null;
-    return VERSES.find(v => v.id === verseId)?.text ?? null;
+    return VERSES.find(v => v.id === verseId)?.text ?? '';
   }
 
-  function haiku3Lines(choice) {
-    return [verseText(choice.verseA), verseText(choice.verseB), verseText(choice.verseC)];
+  function haikuLines(choice) {
+    return (choice.verses || []).map(id => verseText(id));
   }
 
   // ── Setup ────────────────────────────────────────────
@@ -118,24 +149,19 @@ const UI = (() => {
 
   // ── Turn reveal ──────────────────────────────────────
 
-  function renderTurnReveal(s) {
-    app().innerHTML = `
+  function htmlTurnReveal(s) {
+    return `
       <section class="screen-turn-reveal">
         <div class="turn-header">
           <h2>Tour ${s.turnIndex + 1} — Les tableaux du soir</h2>
-          <p>Mémorisez les six œuvres. La phase secrète va commencer.</p>
+          <p>Observez les six œuvres. Cliquez pour les agrandir. La phase secrète va commencer.</p>
         </div>
         ${tracksHtml(s)}
-        <div class="paintings-grid">
-          ${s.turnPaintings.map((p, i) => `
-            <div class="painting-card" data-painting-id="${p.id}">
-              ${paintingImgHtml(p)}
-              <div class="painting-number">${i + 1}</div>
-              <div class="painting-info">
-                <div class="title">${p.title}</div>
-                <div class="artist">${p.artist}, ${p.year}</div>
-              </div>
-            </div>`).join('')}
+        <div class="paintings-grid large">
+          ${s.turnPaintings.map((p, i) => paintingCardHtml(p, i, {
+            action: 'zoom-painting',
+            dataPaintingId: p.id,
+          })).join('')}
         </div>
         <div class="turn-actions">
           <button class="btn btn-primary" data-action="begin-secret">
@@ -147,116 +173,116 @@ const UI = (() => {
 
   // ── Pass screen ──────────────────────────────────────
 
-  function renderPassBefore(s) {
+  function htmlPassBefore(s) {
     const player = s.players[s.secretIndex];
     const isFirst = s.secretIndex === 0;
     const sub = isFirst
       ? 'Les autres joueurs regardent ailleurs.'
-      : `Le joueur précédent s'éloigne de l'écran.`;
-
-    app().innerHTML = `
+      : 'Le joueur précédent s\'éloigne de l\'écran.';
+    return `
       <section class="screen-pass">
         <div class="pass-icon">🎨</div>
-        <div class="pass-title">Passez l'écran à<br><em>${player.name}</em></div>
-        <p class="pass-subtitle">${sub}<br>
-           <strong>${player.name}</strong>, appuyez sur le bouton quand vous êtes seul(e) à voir l'écran.</p>
+        <div class="pass-title">Passez l'écran à<br><em>${escapeHtml(player.name)}</em></div>
+        <p class="pass-subtitle">
+          ${sub}<br>
+          <strong>${escapeHtml(player.name)}</strong>, appuyez quand vous êtes seul(e) à voir l'écran.
+        </p>
         <button class="btn btn-primary" data-action="player-ready">
           J'ai l'écran, je suis prêt(e)
         </button>
       </section>`;
   }
 
-  // ── Secret pick ──────────────────────────────────────
+  // ── Secret compose (combined pick + haiku) ──────────
 
-  function renderSecretPick(s) {
-    const player = s.players[s.secretIndex];
-    const selected = s.draft.paintingId;
+  function htmlSecretCompose(s) {
+    const player = Game.currentPlayer();
+    const d      = s.draft;
+    const ready  = Game.isDraftReady();
+    const { HAIKU_LENGTH } = Game.getConstants();
 
-    app().innerHTML = `
-      <section class="screen-secret">
-        <div class="secret-header">
-          <h2>${player.name}</h2>
-          <p>Choisissez secrètement un tableau à faire deviner.</p>
-        </div>
-        <div class="paintings-grid pick">
-          ${s.turnPaintings.map((p, i) => `
-            <div class="painting-card ${selected === p.id ? 'selected' : ''}"
-                 data-action="select-painting" data-painting-id="${p.id}">
-              ${paintingImgHtml(p)}
-              <div class="painting-number">${i + 1}</div>
-              <div class="painting-info">
-                <div class="title">${p.title}</div>
-                <div class="artist">${p.artist}</div>
-              </div>
-            </div>`).join('')}
-        </div>
-        <div class="secret-actions">
-          <button class="btn btn-primary" data-action="confirm-pick"
-                  ${selected === null ? 'disabled' : ''}>
-            Composer le haïku →
-          </button>
-        </div>
-      </section>`;
-  }
+    // 6 paintings
+    const paintingsHtml = s.turnPaintings.map((p, i) => paintingCardHtml(p, i, {
+      selected: d.paintingId === p.id,
+      action: 'zoom-painting',
+      dataPaintingId: p.id,
+    })).join('');
 
-  // ── Secret haiku ─────────────────────────────────────
-
-  function renderSecretHaiku(s) {
-    const player   = s.players[s.secretIndex];
-    const painting = s.turnPaintings.find(p => p.id === s.draft.paintingId);
-    const d        = s.draft;
-
-    const lineA = d.verseA !== null ? `"${verseText(d.verseA)}"` : null;
-    const lineB = d.verseB !== null ? `"${verseText(d.verseB)}"` : null;
-    const lineC = d.verseC !== null ? `"${verseText(d.verseC)}"` : null;
-
-    function groupHtml(group) {
-      const g = VERSE_GROUPS[group];
-      const selected = d['verse' + group];
+    // Composition slots
+    const slotsHtml = Array.from({ length: HAIKU_LENGTH }, (_, slotIdx) => {
+      const verseId = d.selectedVerses[slotIdx];
+      if (verseId === undefined) {
+        return `
+          <div class="compose-slot empty">
+            <span class="slot-num">${slotIdx + 1}</span>
+            <span class="slot-placeholder">— choisissez un vers —</span>
+          </div>`;
+      }
+      const isFirst = slotIdx === 0;
+      const isLast  = slotIdx === d.selectedVerses.length - 1;
       return `
-        <div class="verse-group">
-          <div class="verse-group-label">${g.label} <span class="syl">${g.syllables}</span></div>
-          ${g.verses.map(v => `
-            <div class="verse-token ${selected === v.id ? 'selected' : ''}"
-                 data-action="select-verse" data-verse-id="${v.id}" data-group="${group}">
-              ${v.text}
-            </div>`).join('')}
+        <div class="compose-slot filled">
+          <span class="slot-num">${slotIdx + 1}</span>
+          <span class="slot-verse">${escapeHtml(verseText(verseId))}</span>
+          <div class="slot-controls">
+            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="up"
+                    ${isFirst ? 'disabled' : ''} title="Monter">↑</button>
+            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="down"
+                    ${isLast ? 'disabled' : ''} title="Descendre">↓</button>
+            <button class="slot-btn remove" data-action="remove-verse" data-verse-id="${verseId}"
+                    title="Retirer">×</button>
+          </div>
         </div>`;
-    }
+    }).join('');
 
-    const allPicked = d.verseA !== null && d.verseB !== null && d.verseC !== null;
+    // Verse hand
+    const handHtml = player.verseHand.map(verseId => {
+      const isUsed = d.selectedVerses.includes(verseId);
+      return `
+        <button class="verse-token ${isUsed ? 'used' : ''}"
+                data-action="add-verse" data-verse-id="${verseId}"
+                ${isUsed ? 'disabled' : ''}>
+          ${escapeHtml(verseText(verseId))}
+        </button>`;
+    }).join('');
 
-    app().innerHTML = `
-      <section class="screen-secret">
-        <div class="secret-header">
-          <h2>${player.name}</h2>
-          <p>Composez votre haïku pour guider vos coéquipiers.</p>
+    const paintingHint = d.paintingId === null
+      ? '<em class="text-muted">Aucun tableau sélectionné — cliquez sur une œuvre pour la choisir.</em>'
+      : (() => {
+          const p = s.turnPaintings.find(p => p.id === d.paintingId);
+          return `<span class="chosen-painting">✓ ${escapeHtml(p.title)} — <span class="text-muted">${escapeHtml(p.artist)}</span></span>`;
+        })();
+
+    return `
+      <section class="screen-compose">
+        <div class="compose-header">
+          <h2>${escapeHtml(player.name)}</h2>
+          <p class="text-muted">
+            Choisissez un tableau (cliquez pour agrandir) et composez votre haïku en 3 vers.
+          </p>
         </div>
-        <div class="haiku-builder">
-          <div class="selected-painting-row">
-            <img src="${painting.imageUrl}"
-                 onerror="this.style.display='none'"
-                 alt="${painting.title}">
-            <div class="sp-info">
-              <div class="sp-title">${painting.title}</div>
-              <div class="sp-artist">${painting.artist}</div>
-            </div>
-          </div>
-          <div class="verse-groups">
-            ${groupHtml('A')}
-            ${groupHtml('B')}
-            ${groupHtml('C')}
-          </div>
-          <div class="haiku-preview">
-            ${lineA ? `<span class="line">${lineA}</span>` : '<span class="line empty">— premier vers —</span>'}
-            ${lineB ? `<span class="line">${lineB}</span>` : '<span class="line empty">— deuxième vers —</span>'}
-            ${lineC ? `<span class="line">${lineC}</span>` : '<span class="line empty">— troisième vers —</span>'}
-          </div>
+
+        <div class="paintings-grid large">
+          ${paintingsHtml}
         </div>
-        <div class="secret-actions">
-          <button class="btn" data-action="back-to-pick">← Rechoisir un tableau</button>
+
+        <div class="compose-status">
+          ${paintingHint}
+        </div>
+
+        <div class="compose-zone">
+          <div class="compose-zone-label">Votre haïku</div>
+          <div class="compose-slots">${slotsHtml}</div>
+        </div>
+
+        <div class="verse-hand">
+          <div class="verse-hand-label">Vos 16 vers</div>
+          <div class="verse-hand-grid">${handHtml}</div>
+        </div>
+
+        <div class="compose-actions">
           <button class="btn btn-primary" data-action="confirm-choice"
-                  ${allPicked ? '' : 'disabled'}>
+                  ${ready ? '' : 'disabled'}>
             Valider le haïku ✓
           </button>
         </div>
@@ -265,58 +291,55 @@ const UI = (() => {
 
   // ── Deduction ────────────────────────────────────────
 
-  function renderDeduction(s) {
+  function htmlDeduction(s) {
     const activeId = s.activeDeductionPlayer;
 
     function haikuEntryHtml(player) {
       const choice = s.choices.find(c => c.playerId === player.id);
-      const lines  = choice ? haiku3Lines(choice) : [];
+      const lines  = choice ? haikuLines(choice) : [];
       const guess  = s.guesses[player.id];
       const guessedPainting = guess !== undefined
         ? s.turnPaintings.find(p => p.id === guess) : null;
-
       return `
         <div class="haiku-entry ${activeId === player.id ? 'active' : ''} ${guess !== undefined ? 'assigned' : ''}"
              data-action="activate-deduction" data-player-id="${player.id}">
-          <div class="player-name">${player.name}</div>
+          <div class="player-name">${escapeHtml(player.name)}</div>
           <div class="haiku-lines">
-            ${lines.filter(Boolean).map(l => `<div>"${l}"</div>`).join('')}
+            ${lines.map(l => `<div>« ${escapeHtml(l)} »</div>`).join('')}
           </div>
           ${guessedPainting
-            ? `<div class="assigned-badge">→ ${guessedPainting.title}</div>`
+            ? `<div class="assigned-badge">→ ${escapeHtml(guessedPainting.title)}</div>`
             : ''}
-        </div>`;
-    }
-
-    function paintingCardHtml(painting, index) {
-      const isGuessed = Object.values(s.guesses).includes(painting.id);
-      return `
-        <div class="painting-card ${isGuessed ? 'guessed' : ''}"
-             data-action="assign-guess" data-painting-id="${painting.id}">
-          ${paintingImgHtml(painting)}
-          <div class="painting-number">${index + 1}</div>
-          <div class="painting-info">
-            <div class="title">${painting.title}</div>
-            <div class="artist">${painting.artist}</div>
-          </div>
         </div>`;
     }
 
     const allDone = Game.allGuessesAssigned();
 
-    app().innerHTML = `
+    const paintingsHtml = s.turnPaintings.map((p, i) => {
+      const isGuessed = Object.values(s.guesses).includes(p.id);
+      return paintingCardHtml(p, i, {
+        guessed: isGuessed,
+        action: 'zoom-painting',
+        dataPaintingId: p.id,
+      });
+    }).join('');
+
+    return `
       <section class="screen-deduction">
         <div class="deduction-header">
           <h2>Déduction collective</h2>
-          <p>Sélectionnez un haïku, puis cliquez sur le tableau qu'il décrit.</p>
+          <p class="text-muted">
+            Sélectionnez un haïku, puis cliquez sur le tableau qu'il décrit.
+            Cliquez sur un tableau pour l'agrandir.
+          </p>
         </div>
         ${tracksHtml(s)}
         <div class="deduction-layout">
           <div class="haiku-list">
             ${s.players.map(p => haikuEntryHtml(p)).join('')}
           </div>
-          <div class="paintings-pick-grid">
-            ${s.turnPaintings.map((p, i) => paintingCardHtml(p, i)).join('')}
+          <div class="paintings-grid large">
+            ${paintingsHtml}
           </div>
         </div>
         <div class="deduction-actions">
@@ -330,27 +353,25 @@ const UI = (() => {
 
   // ── Resolution ───────────────────────────────────────
 
-  function renderResolution(s) {
+  function htmlResolution(s) {
     const { items, allCorrect } = s.lastResolution;
     const over = Game.checkGameOver();
 
     function itemHtml({ player, choice, painting, guessedPainting, correct }) {
-      const lines = choice ? haiku3Lines(choice) : [];
+      const lines = choice ? haikuLines(choice) : [];
       return `
         <div class="resolution-item">
           <div class="ri-painting">
             ${painting
-              ? `<img src="${painting.imageUrl}" alt="${painting.title}"
+              ? `<img src="${painting.imageUrl}" alt="${escapeHtml(painting.title)}"
                       onerror="this.style.display='none'">`
               : ''}
           </div>
           <div class="ri-text">
-            <div class="ri-player">${player.name} — ${painting?.title ?? '?'}</div>
-            <div class="ri-haiku">${lines.filter(Boolean).map(l => `"${l}"`).join(' / ')}</div>
+            <div class="ri-player">${escapeHtml(player.name)} — ${escapeHtml(painting?.title ?? '?')}</div>
+            <div class="ri-haiku">${lines.map(l => `« ${escapeHtml(l)} »`).join(' / ')}</div>
             ${!correct && guessedPainting
-              ? `<div style="font-size:0.78rem;color:var(--danger);margin-top:4px">
-                   Réponse donnée : ${guessedPainting.title}
-                 </div>`
+              ? `<div class="ri-wrong">Réponse donnée : ${escapeHtml(guessedPainting.title)}</div>`
               : ''}
           </div>
           <div class="ri-result">${correct ? '✓' : '✗'}</div>
@@ -362,11 +383,9 @@ const UI = (() => {
       ? '✓ Toutes les associations sont correctes — la Galerie avance !'
       : '✗ Une erreur s\'est glissée — le black-out progresse…';
 
-    let nextLabel = 'Tour suivant →';
-    if (over === 'win')  nextLabel = 'Voir le résultat →';
-    if (over === 'lose') nextLabel = 'Voir le résultat →';
+    const nextLabel = over ? 'Voir le résultat →' : 'Tour suivant →';
 
-    app().innerHTML = `
+    return `
       <section class="screen-resolution">
         <div class="resolution-header">
           <h2>Résolution</h2>
@@ -374,7 +393,7 @@ const UI = (() => {
         <div class="resolution-verdict ${verdictClass}">${verdictMsg}</div>
         ${tracksHtml(s)}
         <div class="resolution-list">
-          ${items.map(item => itemHtml(item)).join('')}
+          ${items.map(i => itemHtml(i)).join('')}
         </div>
         <div class="resolution-actions">
           <button class="btn btn-primary" data-action="next-turn">${nextLabel}</button>
@@ -384,19 +403,68 @@ const UI = (() => {
 
   // ── End ──────────────────────────────────────────────
 
-  function renderEnd(s) {
-    const won  = s.galleryProgress >= Game.getConstants().GALLERY_MAX;
-    const msg  = won
+  function htmlEnd(s) {
+    const { GALLERY_MAX } = Game.getConstants();
+    const won = s.galleryProgress >= GALLERY_MAX;
+    const msg = won
       ? 'Vous avez rejoint la Grande Galerie avant le black-out. Le musée est sauvé !'
       : 'Les lumières se sont éteintes une à une. Le musée a sombré dans l\'obscurité…';
-
-    app().innerHTML = `
+    return `
       <section class="screen-end">
         <h1 class="${won ? 'win' : 'lose'}">${won ? 'Victoire !' : 'Black-out.'}</h1>
         <p class="end-sub">${msg}</p>
         ${tracksHtml(s)}
         <button class="btn btn-primary" data-action="restart">Nouvelle partie</button>
       </section>`;
+  }
+
+  // ── Modal (zoom on painting) ────────────────────────
+
+  function htmlZoomModal(s) {
+    const painting = s.turnPaintings.find(p => p.id === s.zoomedPaintingId)
+                   || PAINTINGS.find(p => p.id === s.zoomedPaintingId);
+    if (!painting) return '';
+
+    let ctxAction = '';
+    if (s.phase === 'secret-compose') {
+      const alreadySelected = s.draft.paintingId === painting.id;
+      ctxAction = `
+        <button class="btn btn-primary"
+                data-action="select-painting-from-modal"
+                data-painting-id="${painting.id}"
+                ${alreadySelected ? 'disabled' : ''}>
+          ${alreadySelected ? '✓ Tableau sélectionné' : 'Choisir ce tableau'}
+        </button>`;
+    } else if (s.phase === 'deduction' && s.activeDeductionPlayer !== null) {
+      ctxAction = `
+        <button class="btn btn-primary"
+                data-action="assign-from-modal"
+                data-painting-id="${painting.id}">
+          Assigner ce tableau au haïku
+        </button>`;
+    }
+
+    return `
+      <div class="modal-overlay" data-action="close-zoom">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <button class="modal-close" data-action="close-zoom" aria-label="Fermer">×</button>
+          <div class="modal-img-wrap">
+            <img src="${painting.imageUrl}"
+                 alt="${escapeHtml(painting.title)}"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="modal-fallback" style="display:none">
+              <div class="fb-title">${escapeHtml(painting.title)}</div>
+              <div class="fb-artist">${escapeHtml(painting.artist)}</div>
+              <div class="fb-year">${painting.year}</div>
+            </div>
+          </div>
+          <div class="modal-info">
+            <div class="modal-title">${escapeHtml(painting.title)}</div>
+            <div class="modal-artist">${escapeHtml(painting.artist)} · ${painting.year}</div>
+          </div>
+          ${ctxAction ? `<div class="modal-actions">${ctxAction}</div>` : ''}
+        </div>
+      </div>`;
   }
 
   // ── Expose ───────────────────────────────────────────

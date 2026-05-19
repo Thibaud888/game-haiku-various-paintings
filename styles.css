@@ -24,9 +24,9 @@ body {
 }
 
 #app {
-  max-width: 980px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: 20px 16px 80px;
   min-height: 100vh;
 }
 
@@ -55,19 +55,12 @@ h1, h2, h3 {
   user-select: none;
 }
 .btn:hover { background: var(--gold); color: var(--bg); }
-
 .btn-primary { background: var(--gold); color: var(--bg); }
 .btn-primary:hover { background: var(--gold-light); border-color: var(--gold-light); }
-
 .btn-sm { padding: 7px 16px; font-size: 0.75rem; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
-.btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* ── Setup screen ─────────────────────────────────── */
+/* ── Setup ────────────────────────────────────────── */
 
 .screen-setup {
   display: flex;
@@ -78,21 +71,13 @@ h1, h2, h3 {
   text-align: center;
   gap: 36px;
 }
-
 .setup-title { font-size: clamp(2.8rem, 7vw, 5rem); color: var(--gold); }
 .setup-subtitle { font-size: 1.1rem; color: var(--text-muted); font-weight: 300; max-width: 480px; }
 
-.setup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  width: 100%;
-  max-width: 440px;
-}
+.setup-form { display: flex; flex-direction: column; gap: 28px; width: 100%; max-width: 440px; }
 
 .player-count-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
 .player-count-row label { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; }
-
 .count-btn {
   width: 40px; height: 40px;
   border: 1px solid var(--border);
@@ -112,18 +97,14 @@ h1, h2, h3 {
 }
 
 .player-names { display: flex; flex-direction: column; gap: 10px; }
-
-.player-input {
-  display: flex; align-items: center; gap: 10px;
-}
+.player-input { display: flex; align-items: center; gap: 10px; }
 .player-input label {
   color: var(--text-muted); font-size: 0.8rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   min-width: 72px; text-align: right;
 }
 .player-input input {
-  flex: 1;
-  padding: 9px 14px;
+  flex: 1; padding: 9px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -134,7 +115,9 @@ h1, h2, h3 {
 }
 .player-input input:focus { outline: none; border-color: var(--gold); }
 
-/* ── Progress bar ─────────────────────────────────── */
+/* ── Tracks ──────────────────────────────────────── */
+
+.tracks { display: flex; flex-direction: column; gap: 8px; }
 
 .progress-bar {
   display: flex;
@@ -145,7 +128,6 @@ h1, h2, h3 {
   border-radius: var(--radius);
   border: 1px solid var(--border);
 }
-
 .progress-label {
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -154,41 +136,21 @@ h1, h2, h3 {
 }
 .progress-label.gallery { color: var(--gold); }
 .progress-label.blackout { color: var(--danger); }
-
 .progress-dots { display: flex; gap: 6px; flex: 1; }
-
-.dot {
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  border: 1.5px solid;
-  transition: background 0.3s;
-}
+.dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid; transition: background 0.3s; }
 .dot.gallery-dot { border-color: var(--gold); }
 .dot.gallery-dot.filled { background: var(--gold); }
 .dot.blackout-dot { border-color: var(--danger); }
 .dot.blackout-dot.filled { background: var(--danger); }
 
-/* ── Turn reveal ─────────────────────────────────── */
-
-.screen-turn-reveal {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.turn-header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.turn-header h2 { font-size: 1.9rem; }
-.turn-header p { color: var(--text-muted); font-size: 0.9rem; }
+/* ── Painting cards ──────────────────────────────── */
 
 .paintings-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
+.paintings-grid.large { gap: 22px; }
 
 .painting-card {
   background: var(--surface);
@@ -196,56 +158,90 @@ h1, h2, h3 {
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.18s, transform 0.15s;
+  transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
   position: relative;
 }
-.painting-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.painting-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
 .painting-card.selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
-.painting-card.guessed { border-color: var(--text-muted); opacity: 0.6; }
+.painting-card.guessed { border-color: var(--success); opacity: 0.55; }
 
+/* Larger image area showing the whole painting */
 .painting-img-wrap {
-  width: 100%; aspect-ratio: 4/3; overflow: hidden; background: var(--surface-2);
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #050608;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 .painting-img-wrap img {
-  width: 100%; height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
 }
+
+/* Fallback when image fails to load */
 .painting-fallback {
+  position: absolute;
+  inset: 0;
   width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--surface-2);
-  color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  gap: 6px;
+  background: linear-gradient(135deg, #1a1820 0%, #0d0e14 100%);
+  color: var(--text);
 }
+.painting-fallback .fb-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.painting-fallback .fb-artist { font-size: 0.85rem; color: var(--text); }
+.painting-fallback .fb-year { font-size: 0.75rem; color: var(--text-muted); }
 
 .painting-number {
   position: absolute;
-  top: 8px; left: 8px;
-  background: rgba(13,17,23,0.85);
+  top: 10px; left: 10px;
+  background: rgba(13,17,23,0.92);
   color: var(--gold);
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.1rem;
-  width: 28px; height: 28px;
+  font-size: 1.15rem;
+  width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
   border: 1px solid var(--gold);
+  z-index: 2;
 }
 
-.painting-info {
-  padding: 10px 12px;
-}
+.painting-info { padding: 12px 14px; }
 .painting-info .title {
-  font-size: 0.85rem; font-weight: 500; color: var(--text);
+  font-size: 0.92rem; font-weight: 500; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.painting-info .artist {
-  font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;
-}
+.painting-info .artist { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
 
+/* ── Turn reveal ─────────────────────────────────── */
+
+.screen-turn-reveal { display: flex; flex-direction: column; gap: 24px; }
+.turn-header h2 { font-size: 2rem; }
+.turn-header p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
 .turn-actions { display: flex; justify-content: flex-end; }
 
-/* ── Pass screen overlay ──────────────────────────── */
+/* ── Pass screen ─────────────────────────────────── */
 
 .screen-pass {
   min-height: 90vh;
@@ -255,88 +251,121 @@ h1, h2, h3 {
   justify-content: center;
   text-align: center;
   gap: 32px;
-  background: var(--bg);
 }
-
-.pass-icon {
-  font-size: 3.5rem;
-  filter: grayscale(0.3);
-}
-
+.pass-icon { font-size: 3.5rem; }
 .pass-title {
   font-size: 2.2rem;
   color: var(--gold);
   font-family: 'Cormorant Garamond', serif;
 }
+.pass-subtitle { color: var(--text-muted); max-width: 420px; line-height: 1.7; }
 
-.pass-subtitle {
-  color: var(--text-muted);
-  max-width: 380px;
-  line-height: 1.7;
-}
+/* ── Compose screen (pick + haiku combined) ──────── */
 
-/* ── Secret phase ─────────────────────────────────── */
+.screen-compose { display: flex; flex-direction: column; gap: 22px; }
 
-.screen-secret {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
+.compose-header h2 { font-size: 1.9rem; color: var(--gold); }
+.compose-header p { margin-top: 4px; font-size: 0.92rem; }
 
-.secret-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-.secret-header h2 { font-size: 1.8rem; color: var(--gold); }
-.secret-header p { color: var(--text-muted); }
-
-.paintings-grid.pick { cursor: pointer; }
-
-/* ── Verse picker ─────────────────────────────────── */
-
-.haiku-builder {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.haiku-builder .selected-painting-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 10px 14px;
+.compose-status {
+  padding: 12px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  font-size: 0.92rem;
 }
-.selected-painting-row img {
-  width: 60px; height: 45px;
-  object-fit: cover; border-radius: 4px;
+.chosen-painting { color: var(--gold); font-weight: 500; }
+
+.compose-zone {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 16px 18px;
 }
-.selected-painting-row .sp-info { font-size: 0.85rem; }
-.selected-painting-row .sp-title { color: var(--text); }
-.selected-painting-row .sp-artist { color: var(--text-muted); font-size: 0.75rem; }
-
-.verse-groups {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.verse-group { display: flex; flex-direction: column; gap: 8px; }
-
-.verse-group-label {
+.compose-zone-label {
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
 }
-.verse-group-label .syl { color: var(--gold); }
+
+.compose-slots { display: flex; flex-direction: column; gap: 8px; }
+
+.compose-slot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  min-height: 50px;
+}
+.compose-slot.filled {
+  border-style: solid;
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
+.compose-slot .slot-num {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--gold);
+  font-size: 1.2rem;
+  min-width: 22px;
+}
+.compose-slot .slot-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.88rem;
+}
+.compose-slot .slot-verse {
+  flex: 1;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.slot-controls { display: flex; gap: 4px; }
+.slot-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.slot-btn:hover { border-color: var(--gold); color: var(--gold); }
+.slot-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+.slot-btn.remove:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ── Verse hand ──────────────────────────────────── */
+
+.verse-hand {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.verse-hand-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.verse-hand-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
 
 .verse-token {
   padding: 10px 12px;
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
@@ -344,50 +373,33 @@ h1, h2, h3 {
   font-style: italic;
   font-family: 'Cormorant Garamond', serif;
   color: var(--text);
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.4;
 }
-.verse-token:hover { border-color: var(--gold); background: var(--gold-dim); }
-.verse-token.selected { border-color: var(--gold); background: var(--gold-dim); color: var(--gold-light); }
-
-.haiku-preview {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--gold);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.15rem;
-  font-style: italic;
-  line-height: 2;
-  min-height: 90px;
-}
-.haiku-preview .line { display: block; }
-.haiku-preview .line.empty { color: var(--text-muted); font-size: 0.9rem; }
-
-.secret-actions {
-  display: flex; gap: 12px; justify-content: flex-end;
+.verse-token:hover { border-color: var(--gold); color: var(--gold-light); }
+.verse-token.used {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  text-decoration: line-through;
 }
 
-/* ── Deduction screen ─────────────────────────────── */
+.compose-actions { display: flex; justify-content: flex-end; }
 
-.screen-deduction {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+/* ── Deduction ───────────────────────────────────── */
 
+.screen-deduction { display: flex; flex-direction: column; gap: 22px; }
 .deduction-header h2 { font-size: 1.9rem; }
-.deduction-header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+.deduction-header p { margin-top: 4px; font-size: 0.92rem; }
 
 .deduction-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(260px, 1fr) 1.4fr;
   gap: 24px;
 }
 
-.haiku-list { display: flex; flex-direction: column; gap: 10px; }
+.haiku-list { display: flex; flex-direction: column; gap: 10px; align-self: start; }
 
 .haiku-entry {
   background: var(--surface);
@@ -412,7 +424,7 @@ h1, h2, h3 {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.05rem;
   font-style: italic;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .haiku-entry .assigned-badge {
   margin-top: 8px;
@@ -421,28 +433,11 @@ h1, h2, h3 {
   letter-spacing: 0.05em;
 }
 
-.paintings-pick-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  align-content: start;
-}
-.paintings-pick-grid .painting-card { cursor: pointer; }
-.paintings-pick-grid .painting-card.just-assigned {
-  border-color: var(--success);
-  box-shadow: 0 0 0 2px var(--success);
-}
-
 .deduction-actions { display: flex; justify-content: flex-end; }
 
-/* ── Resolution screen ───────────────────────────── */
+/* ── Resolution ──────────────────────────────────── */
 
-.screen-resolution {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
+.screen-resolution { display: flex; flex-direction: column; gap: 24px; }
 .resolution-header h2 { font-size: 1.9rem; }
 
 .resolution-verdict {
@@ -450,7 +445,7 @@ h1, h2, h3 {
   border-radius: var(--radius);
   font-size: 1rem;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 .resolution-verdict.success {
   background: rgba(74,170,114,0.12);
@@ -475,20 +470,33 @@ h1, h2, h3 {
   border-radius: var(--radius);
   padding: 12px 16px;
 }
-.resolution-item .ri-painting {
-  display: flex; align-items: center; gap: 10px;
-}
 .resolution-item img {
-  width: 56px; height: 42px; object-fit: cover; border-radius: 4px;
+  width: 80px; height: 60px;
+  object-fit: cover; border-radius: 4px;
 }
-.resolution-item .ri-text { flex: 1; }
-.resolution-item .ri-player { font-size: 0.78rem; color: var(--text-muted); }
+.resolution-item .ri-text { flex: 1; min-width: 0; }
+.resolution-item .ri-player {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+}
 .resolution-item .ri-haiku {
   font-family: 'Cormorant Garamond', serif;
-  font-style: italic; font-size: 0.95rem; color: var(--text-muted);
-  margin-top: 2px;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.5;
 }
-.resolution-item .ri-result { font-size: 1.4rem; }
+.resolution-item .ri-wrong {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-top: 6px;
+}
+.resolution-item .ri-result {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
 
 .resolution-actions { display: flex; justify-content: flex-end; }
 
@@ -508,28 +516,135 @@ h1, h2, h3 {
 .screen-end h1.win { color: var(--gold); }
 .screen-end h1.lose { color: var(--danger); }
 
-/* ── Shared utilities ─────────────────────────────── */
+/* ── Modal (painting zoom) ───────────────────────── */
 
-.tracks { display: flex; flex-direction: column; gap: 8px; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  animation: fadeIn 0.18s ease-out;
+}
 
-.divider {
-  border: none;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-content {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 1000px;
+  width: 100%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: rgba(13,17,23,0.92);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 34px; height: 34px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+  z-index: 5;
+}
+.modal-close:hover { border-color: var(--gold); color: var(--gold); }
+
+.modal-img-wrap {
+  flex: 1;
+  min-height: 0;
+  background: #050608;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.modal-img-wrap img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  display: block;
+}
+.modal-fallback {
+  width: 100%; height: 100%;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+  gap: 10px;
+  background: linear-gradient(135deg, #1a1820 0%, #0d0e14 100%);
+}
+.modal-fallback .fb-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  color: var(--gold);
+}
+.modal-fallback .fb-artist { font-size: 1.1rem; color: var(--text); }
+.modal-fallback .fb-year { font-size: 0.95rem; color: var(--text-muted); }
+
+.modal-info {
+  padding: 16px 22px;
   border-top: 1px solid var(--border);
 }
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+}
+.modal-artist {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.modal-actions {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Utilities ───────────────────────────────────── */
 
 .text-muted { color: var(--text-muted); }
 .text-center { text-align: center; }
 
 /* ── Responsive ──────────────────────────────────── */
 
-@media (max-width: 680px) {
-  .paintings-grid { grid-template-columns: repeat(2, 1fr); }
-  .verse-groups { grid-template-columns: 1fr; }
-  .deduction-layout { grid-template-columns: 1fr; }
-  .paintings-pick-grid { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 1000px) {
+  .paintings-grid.large { grid-template-columns: repeat(3, 1fr); }
 }
 
-@media (max-width: 420px) {
-  .paintings-grid { grid-template-columns: repeat(2, 1fr); }
-  .paintings-pick-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 760px) {
+  .paintings-grid.large { grid-template-columns: repeat(2, 1fr); }
+  .deduction-layout { grid-template-columns: 1fr; }
+  .verse-hand-grid { grid-template-columns: repeat(2, 1fr); }
+  .resolution-item { grid-template-columns: 56px 1fr auto; }
+  .resolution-item img { width: 56px; height: 42px; }
+}
+
+@media (max-width: 480px) {
+  .paintings-grid.large { grid-template-columns: 1fr; }
+  .verse-hand-grid { grid-template-columns: 1fr; }
+  .compose-slot { flex-wrap: wrap; }
+  .slot-controls { width: 100%; justify-content: flex-end; }
 }

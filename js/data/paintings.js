@@ -151,7 +151,7 @@ const PAINTINGS = [
     title: 'Les Joueurs de cartes',
     artist: 'Paul Cézanne',
     year: 1895,
-    imageUrl: wikiImg('Paul_Cézanne,_The_Card_Players.jpg'),
+    imageUrl: wikiImg('Les_Joueurs_de_cartes,_par_Paul_Cézanne.jpg'),
   },
   {
     id: 21,

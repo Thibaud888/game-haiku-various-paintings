@@ -27,8 +27,8 @@ document.getElementById('app').addEventListener('click', e => {
       break;
     }
     case 'start-game': {
-      const count   = parseInt(document.getElementById('count-display').textContent, 10);
-      const names   = Array.from({ length: count }, (_, i) => {
+      const count = parseInt(document.getElementById('count-display').textContent, 10);
+      const names = Array.from({ length: count }, (_, i) => {
         const input = document.getElementById(`player-${i}`);
         return (input?.value?.trim()) || `Joueur ${i + 1}`;
       });
@@ -49,27 +49,49 @@ document.getElementById('app').addEventListener('click', e => {
       UI.render();
       break;
 
-    // ── Secret pick ────────────────────────────────────
-    case 'select-painting': {
+    // ── Painting zoom modal ────────────────────────────
+    case 'zoom-painting': {
       const paintingId = parseInt(target.dataset.paintingId, 10);
-      Game.selectPainting(paintingId);
+      Game.zoomPainting(paintingId);
       UI.render();
       break;
     }
-    case 'confirm-pick':
-      Game.confirmPick();
+    case 'close-zoom':
+      Game.closeZoom();
       UI.render();
       break;
+    case 'select-painting-from-modal': {
+      const paintingId = parseInt(target.dataset.paintingId, 10);
+      Game.selectPainting(paintingId);
+      Game.closeZoom();
+      UI.render();
+      break;
+    }
+    case 'assign-from-modal': {
+      const paintingId = parseInt(target.dataset.paintingId, 10);
+      Game.assignGuess(paintingId);
+      Game.closeZoom();
+      UI.render();
+      break;
+    }
 
-    // ── Secret haiku ───────────────────────────────────
-    case 'back-to-pick':
-      Game.getState().phase = 'secret-pick';
+    // ── Secret compose ─────────────────────────────────
+    case 'add-verse': {
+      const verseId = parseInt(target.dataset.verseId, 10);
+      Game.addVerse(verseId);
       UI.render();
       break;
-    case 'select-verse': {
+    }
+    case 'remove-verse': {
       const verseId = parseInt(target.dataset.verseId, 10);
-      const group   = target.dataset.group;
-      Game.selectVerse(verseId, group);
+      Game.removeVerse(verseId);
+      UI.render();
+      break;
+    }
+    case 'move-verse': {
+      const verseId = parseInt(target.dataset.verseId, 10);
+      const dir     = target.dataset.dir;
+      Game.moveVerse(verseId, dir);
       UI.render();
       break;
     }
@@ -82,12 +104,6 @@ document.getElementById('app').addEventListener('click', e => {
     case 'activate-deduction': {
       const playerId = parseInt(target.dataset.playerId, 10);
       Game.activateDeductionPlayer(playerId);
-      UI.render();
-      break;
-    }
-    case 'assign-guess': {
-      const paintingId = parseInt(target.dataset.paintingId, 10);
-      Game.assignGuess(paintingId);
       UI.render();
       break;
     }
@@ -106,5 +122,15 @@ document.getElementById('app').addEventListener('click', e => {
     case 'restart':
       UI.renderSetup();
       break;
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const s = Game.getState();
+    if (s && s.zoomedPaintingId !== null) {
+      Game.closeZoom();
+      UI.render();
+    }
   }
 });
