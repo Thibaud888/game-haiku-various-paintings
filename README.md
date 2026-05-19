@@ -34,12 +34,37 @@ Voir [RULES.md](RULES.md) pour les règles complètes en français.
 
 ## Œuvres incluses
 
-30 tableaux du domaine public issus de Wikimedia Commons :
-Van Gogh, Léonard de Vinci, Munch, Hokusai, Botticelli, Klimt,
-Friedrich, Rembrandt, Monet, Vermeer, Goya, Delacroix, Seurat,
-Géricault, Bosch, Velázquez, David, Raphaël, Michel-Ange, Renoir,
-Cézanne, Ingres, Whistler, Turner, Toulouse-Lautrec, Arcimboldo,
-Manet, Bruegel, Caravage, Van Eyck.
+~250 tableaux du domaine public issus de Wikimedia Commons,
+couvrant toutes les grandes périodes :
+
+- **Renaissance** italienne, flamande, nordique (Léonard, Michel-Ange,
+  Raphaël, Botticelli, Titien, Van Eyck, Bosch, Bruegel, Dürer, Holbein…)
+- **Baroque** (Caravage, Rubens, Rembrandt, Vermeer, Velázquez, Goya,
+  Gentileschi…)
+- **XVIIIe-XIXe** (Watteau, Fragonard, David, Ingres, Delacroix, Géricault,
+  Friedrich, Turner, Constable, Courbet, Millet, Manet…)
+- **Impressionnisme & post-impressionnisme** (Monet, Renoir, Degas,
+  Pissarro, Caillebotte, Morisot, Van Gogh, Seurat, Cézanne, Gauguin,
+  Toulouse-Lautrec…)
+- **Symbolisme & préraphaélites** (Klimt, Moreau, Redon, Millais,
+  Waterhouse, Rossetti, Böcklin, Fuseli…)
+- **Modernes pré-1955** (Munch, Schiele, Modigliani, Matisse, Kandinsky,
+  Mondrian, Klee, Bonnard, Beckmann, Soutine, Grant Wood…)
+- **Estampes japonaises** (Hokusai, Hiroshige, Utamaro, Sharaku,
+  Kuniyoshi, Yoshitoshi, Jakuchū…)
+
+## Vérification des images
+
+Les URLs Wikimedia sont écrites à la main et peuvent contenir des erreurs.
+Pour vérifier la validité de chaque URL :
+
+```bash
+node scripts/verify-paintings.mjs
+```
+
+Le script teste chaque URL (HEAD/GET) et liste les éventuels échecs
+dans `scripts/failures.json`. Les images cassées sont gérées par un
+fallback stylisé affichant titre, artiste et année.
 
 ## Structure du projet
 
