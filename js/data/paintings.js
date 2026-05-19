@@ -7,9 +7,15 @@
 // Pour vérifier la validité des URLs, exécuter `node scripts/verify-paintings.mjs`
 // depuis la racine du projet (nécessite un accès internet).
 
+// URL Wikimedia (utilisée comme fallback si le téléchargement local n'a pas été fait).
 function wikiImg(filename) {
   return 'https://commons.wikimedia.org/wiki/Special:FilePath/'
-       + encodeURIComponent(filename) + '?width=600';
+       + encodeURIComponent(filename) + '?width=800';
+}
+
+// Chemin local — généré par scripts/download-paintings.mjs
+function localImg(id) {
+  return 'images/' + id + '.jpg';
 }
 
 const PAINTINGS_DATA = [
@@ -292,5 +298,8 @@ const PAINTINGS_DATA = [
 ];
 
 const PAINTINGS = PAINTINGS_DATA.map(([title, artist, year, file], id) => ({
-  id, title, artist, year, imageUrl: wikiImg(file)
+  id, title, artist, year,
+  imageUrl:  localImg(id),   // chemin local prioritaire
+  remoteUrl: wikiImg(file),  // fallback Wikimedia si local absent
+  file,                      // nom de fichier Wikimedia (pour le script de download)
 }));

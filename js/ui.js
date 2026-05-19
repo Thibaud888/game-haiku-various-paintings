@@ -44,13 +44,17 @@ const UI = (() => {
       <div class="fb-title">${title}</div>
       <div class="fb-artist">${artist}</div>
       <div class="fb-year">${painting.year}</div>`;
+    // Fallback en cascade : local → remote Wikimedia → fiche stylée.
+    // 1er onerror : bascule sur l'URL distante et reconfigure onerror pour
+    // afficher la fiche stylée si le distant échoue aussi.
+    const remote = painting.remoteUrl || '';
     return `
       <div class="painting-img-wrap">
         <img
           src="${painting.imageUrl}"
           alt="${title}"
           loading="lazy"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          onerror="if(this.dataset.fallback){this.style.display='none';this.nextElementSibling.style.display='flex';}else{this.dataset.fallback='1';this.src='${remote}';}"
         >
         <div class="painting-fallback" style="display:none">${fallbackContent}</div>
       </div>`;
@@ -364,7 +368,7 @@ const UI = (() => {
           <div class="ri-painting">
             ${painting
               ? `<img src="${painting.imageUrl}" alt="${escapeHtml(painting.title)}"
-                      onerror="this.style.display='none'">`
+                      onerror="if(this.dataset.fallback){this.style.display='none';}else{this.dataset.fallback='1';this.src='${painting.remoteUrl || ''}';}">`
               : ''}
           </div>
           <div class="ri-text">
@@ -451,7 +455,7 @@ const UI = (() => {
           <div class="modal-img-wrap">
             <img src="${painting.imageUrl}"
                  alt="${escapeHtml(painting.title)}"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                 onerror="if(this.dataset.fallback){this.style.display='none';this.nextElementSibling.style.display='flex';}else{this.dataset.fallback='1';this.src='${painting.remoteUrl || ''}';}">
             <div class="modal-fallback" style="display:none">
               <div class="fb-title">${escapeHtml(painting.title)}</div>
               <div class="fb-artist">${escapeHtml(painting.artist)}</div>

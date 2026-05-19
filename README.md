@@ -53,18 +53,41 @@ couvrant toutes les grandes périodes :
 - **Estampes japonaises** (Hokusai, Hiroshige, Utamaro, Sharaku,
   Kuniyoshi, Yoshitoshi, Jakuchū…)
 
-## Vérification des images
+## Images : téléchargement local & fallback
 
-Les URLs Wikimedia sont écrites à la main et peuvent contenir des erreurs.
-Pour vérifier la validité de chaque URL :
+Par défaut le jeu cherche les images dans `images/<id>.jpg` (local).
+Si un fichier est absent, il tombe en cascade sur l'URL Wikimedia
+distante, puis sur une fiche stylée (titre + artiste + année).
+
+### Premier téléchargement
 
 ```bash
-node scripts/verify-paintings.mjs
+node scripts/download-paintings.mjs
 ```
 
-Le script teste chaque URL (HEAD/GET) et liste les éventuels échecs
-dans `scripts/failures.json`. Les images cassées sont gérées par un
-fallback stylisé affichant titre, artiste et année.
+Le script :
+- récupère les ~250 images depuis Wikimedia Commons (largeur 800 px)
+- les sauve dans `./images/<id>.jpg`
+- génère `scripts/download-report.json` listant succès et échecs
+- volume final attendu : 50-80 MB
+
+Options :
+- `--force` : retélécharger même les fichiers déjà présents
+- `--width=N` : largeur souhaitée (défaut 800)
+- `--conc=N` : téléchargements simultanés (défaut 6)
+
+### Modes hors-ligne vs hotlink
+
+- **Sans téléchargement** : le jeu fonctionne **avec internet** (charge
+  les images depuis Wikimedia à la volée).
+- **Après téléchargement** : le jeu fonctionne **hors-ligne**, charge
+  plus vite, et tu disposes d'un rapport de validité des URLs.
+
+### Commiter les images ou non ?
+
+Par défaut `images/` est dans `.gitignore` (repo léger, ~250 KB sans les
+images). Pour distribuer une version "prête à jouer", commenter la ligne
+`images/` dans `.gitignore` et faire `git add images/`.
 
 ## Structure du projet
 

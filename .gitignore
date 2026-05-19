@@ -1,0 +1,15 @@
+# Images téléchargées localement (~50-80 MB).
+# Décommenter la ligne suivante pour les commiter et les distribuer
+# avec le repo (utile pour partager une version "prête à jouer").
+images/
+
+# Rapports générés par les scripts
+scripts/download-report.json
+scripts/failures.json
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
