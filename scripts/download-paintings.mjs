@@ -6,9 +6,11 @@
 // Options:
 //   --force      retélécharger même les fichiers déjà présents
 //   --width=N    largeur cible (défaut 800)
-//   --conc=N     nombre de téléchargements simultanés (défaut 6)
+//   --conc=N     nombre de téléchargements simultanés (défaut 2 — Wikimedia rate-limite)
+//   --delay=N    délai (ms) entre requêtes d'un même worker (défaut 250)
 //
-// Format de sortie : images/<id>.jpg
+// Politesse : respecte les limites Wikimedia (concurrence faible + délais
+// + retry exponentiel sur 429 + User-Agent identifiant).
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -28,13 +30,14 @@ const args = Object.fromEntries(
   })
 );
 const WIDTH       = parseInt(args.width, 10) || 800;
-const CONCURRENCY = parseInt(args.conc,  10) || 6;
+const CONCURRENCY = parseInt(args.conc,  10) || 2;
+const DELAY_MS    = parseInt(args.delay, 10) || 250;
 const FORCE       = !!args.force;
 const TIMEOUT_MS  = 30_000;
+const MAX_RETRY   = 4;
 
 mkdirSync(IMG_DIR, { recursive: true });
 
-// ── Charge PAINTINGS_DATA depuis le fichier source ─────────
 const src = readFileSync(resolve(ROOT, 'js/data/paintings.js'), 'utf8');
 function extractData() {
   const start = src.indexOf('const PAINTINGS_DATA = [');
@@ -51,8 +54,10 @@ function wikiUrl(filename, width = WIDTH) {
        + encodeURIComponent(filename) + '?width=' + width;
 }
 
-// ── Télécharge une image ───────────────────────────────────
-async function downloadOne(id, file) {
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Téléchargement avec retry exponentiel sur 429 ────────
+async function downloadOne(id, file, attempt = 1) {
   const dest = resolve(IMG_DIR, `${id}.jpg`);
   if (!FORCE && existsSync(dest) && statSync(dest).size > 1024) {
     return { id, status: 'skipped', file };
@@ -67,9 +72,21 @@ async function downloadOne(id, file) {
       redirect: 'follow',
       signal: ctrl.signal,
       headers: {
-        'User-Agent': 'NuitAuMusee/1.0 (downloader for personal art-haiku game)',
+        'User-Agent': 'NuitAuMusee/1.0 (https://github.com/Thibaud888/game-haiku-various-paintings; personal art-haiku game)',
       },
     });
+
+    if (res.status === 429) {
+      if (attempt < MAX_RETRY) {
+        clearTimeout(t);
+        const wait = 2000 * Math.pow(2, attempt - 1); // 2s, 4s, 8s, 16s
+        process.stdout.write(`\n  [#${id}] 429 — retry dans ${wait}ms (tentative ${attempt + 1}/${MAX_RETRY})`);
+        await sleep(wait);
+        return downloadOne(id, file, attempt + 1);
+      }
+      return { id, status: 'fail', file, httpStatus: 429, note: 'rate limited after retries' };
+    }
+
     if (!res.ok) {
       return { id, status: 'fail', file, httpStatus: res.status };
     }
@@ -86,35 +103,34 @@ async function downloadOne(id, file) {
   }
 }
 
-// ── Pool concurrent ────────────────────────────────────────
+// ── Pool concurrent avec délai entre les requêtes d'un même worker ──
 async function runPool(items, concurrency, worker, onProgress) {
-  const queue = items.slice();
-  const results = [];
-  let inFlight = 0;
+  let cursor = 0;
   let done = 0;
-  return new Promise((resolveAll, rejectAll) => {
-    function next() {
-      if (queue.length === 0 && inFlight === 0) return resolveAll(results);
-      while (inFlight < concurrency && queue.length) {
-        const item = queue.shift();
-        inFlight++;
-        worker(item).then(r => {
-          results.push(r);
-          inFlight--;
-          done++;
-          onProgress?.(done, items.length, r);
-          next();
-        }, rejectAll);
-      }
+  const results = [];
+
+  async function workerLoop() {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      const r = await worker(items[i]);
+      results.push(r);
+      done++;
+      onProgress?.(done, items.length, r);
+      // Délai poli entre requêtes (sauf la dernière)
+      if (cursor < items.length) await sleep(DELAY_MS);
     }
-    next();
-  });
+  }
+
+  const workers = Array.from({ length: concurrency }, workerLoop);
+  await Promise.all(workers);
+  return results;
 }
 
 // ── Main ───────────────────────────────────────────────────
 async function main() {
   console.log(`Téléchargement de ${data.length} images vers ./images`);
-  console.log(`Concurrence: ${CONCURRENCY}, largeur: ${WIDTH}px, force: ${FORCE}`);
+  console.log(`Concurrence: ${CONCURRENCY}, délai: ${DELAY_MS}ms, largeur: ${WIDTH}px, force: ${FORCE}`);
   console.log('');
 
   const items = data.map(([title, artist, year, file], id) =>
@@ -129,7 +145,7 @@ async function main() {
     (done, total, r) => {
       const tag = r.status === 'ok' ? '✓' : r.status === 'skipped' ? '·' : '✗';
       const sizeKB = r.bytes ? `${Math.round(r.bytes / 1024)}KB` : '';
-      process.stdout.write(`\r[${done}/${total}] ${tag} #${r.id}  ${sizeKB}        `);
+      process.stdout.write(`\r[${done}/${total}] ${tag} #${r.id}  ${sizeKB}              `);
     }
   );
 
@@ -138,7 +154,6 @@ async function main() {
   const ok   = results.filter(r => r.status === 'ok');
   const skip = results.filter(r => r.status === 'skipped');
   const fail = results.filter(r => r.status === 'fail');
-
   const totalBytes = ok.reduce((s, r) => s + (r.bytes || 0), 0);
 
   console.log('──── Récapitulatif ────');
@@ -169,10 +184,6 @@ async function main() {
     })),
   }, null, 2));
   console.log(`\nRapport complet : ${reportPath}`);
-
-  if (fail.length) {
-    console.log('\n→ Partagez le contenu de download-report.json pour correction des URLs.');
-  }
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
