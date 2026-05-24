@@ -4,8 +4,6 @@
 
 const Game = (() => {
 
-  const GALLERY_MAX  = 7;
-  const BLACKOUT_MAX = 5;
   const HAIKU_LENGTH = 3;
 
   let state = null;
@@ -21,7 +19,7 @@ const Game = (() => {
 
   // ── Public API ───────────────────────────────────────
 
-  function init(playerNames) {
+  function init(playerNames, settings = {}) {
     // Distribute unique 16-verse hands to each player from the pool.
     const shuffledVerses = shuffle(VERSES.slice());
     let cursor = 0;
@@ -39,6 +37,10 @@ const Game = (() => {
 
       players,
       secretIndex: 0,
+      composeOrder: players.map(p => p.id),
+
+      galleryMax:  settings.galleryMax  ?? 10,
+      blackoutMax: settings.blackoutMax ?? 8,
 
       paintingPool: shuffle(PAINTINGS.slice()),
       poolOffset: 0,
@@ -75,8 +77,11 @@ const Game = (() => {
     state.poolOffset += 6;
   }
 
-  // Turn reveal → begin secret phase for player 0
+  // Turn reveal → begin secret phase, rotating start player each turn
   function beginSecretPhase() {
+    const offset = state.turnIndex % state.players.length;
+    const ids = state.players.map(p => p.id);
+    state.composeOrder = [...ids.slice(offset), ...ids.slice(0, offset)];
     state.secretIndex = 0;
     state.choices     = [];
     state.guesses     = {};
@@ -127,12 +132,12 @@ const Game = (() => {
     const d = state.draft;
 
     state.choices.push({
-      playerId:   state.players[state.secretIndex].id,
+      playerId:   state.composeOrder[state.secretIndex],
       paintingId: d.paintingId,
       verses:     d.selectedVerses.slice(),
     });
 
-    const isLast = state.secretIndex === state.players.length - 1;
+    const isLast = state.secretIndex === state.composeOrder.length - 1;
     if (isLast) {
       state.draft = emptyDraft();
       state.phase = 'deduction';
@@ -180,28 +185,27 @@ const Game = (() => {
   }
 
   function resolveRound() {
-    let allCorrect = true;
     const items = state.players.map(player => {
       const choice  = state.choices.find(c => c.playerId === player.id);
       const guessed = state.guesses[player.id];
       const correct = !!choice && guessed === choice.paintingId;
-      if (!correct) allCorrect = false;
 
-      const painting = state.turnPaintings.find(p => p.id === choice?.paintingId);
+      const painting        = state.turnPaintings.find(p => p.id === choice?.paintingId);
       const guessedPainting = state.turnPaintings.find(p => p.id === guessed);
 
       return { player, choice, painting, guessedPainting, correct };
     });
 
-    if (allCorrect) state.galleryProgress++;
-    else            state.blackoutProgress++;
+    const correctCount = items.filter(i => i.correct).length;
+    state.galleryProgress  += correctCount;
+    state.blackoutProgress += (items.length - correctCount);
 
-    state.lastResolution = { items, allCorrect };
+    state.lastResolution = { items, allCorrect: correctCount === items.length, correctCount };
   }
 
   function checkGameOver() {
-    if (state.galleryProgress  >= GALLERY_MAX)  return 'win';
-    if (state.blackoutProgress >= BLACKOUT_MAX) return 'lose';
+    if (state.galleryProgress  >= state.galleryMax)  return 'win';
+    if (state.blackoutProgress >= state.blackoutMax) return 'lose';
     return null;
   }
 
@@ -220,11 +224,17 @@ const Game = (() => {
   function getState() { return state; }
 
   function getConstants() {
-    return { GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };
+    return {
+      GALLERY_MAX:  state ? state.galleryMax  : 10,
+      BLACKOUT_MAX: state ? state.blackoutMax : 8,
+      HAIKU_LENGTH,
+      VERSES_PER_PLAYER,
+    };
   }
 
   function currentPlayer() {
-    return state.players[state.secretIndex];
+    const playerId = state.composeOrder[state.secretIndex];
+    return state.players.find(p => p.id === playerId);
   }
 
   function setPhase(phase) { state.phase = phase; }

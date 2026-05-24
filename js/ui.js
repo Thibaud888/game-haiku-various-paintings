@@ -130,6 +130,38 @@ const UI = (() => {
             <button type="button" class="count-btn" data-action="count-inc">+</button>
           </div>
           <div class="player-names" id="player-names"></div>
+
+          <div class="setup-options">
+            <div class="option-group">
+              <div class="option-label">Durée de partie</div>
+              <div class="option-btns">
+                <button class="opt-btn" data-action="set-option" data-option="duration" data-value="short">
+                  Court<span class="opt-desc">6 tableaux gagnants</span>
+                </button>
+                <button class="opt-btn active" data-action="set-option" data-option="duration" data-value="standard">
+                  Standard<span class="opt-desc">10 tableaux gagnants</span>
+                </button>
+                <button class="opt-btn" data-action="set-option" data-option="duration" data-value="long">
+                  Long<span class="opt-desc">15 tableaux gagnants</span>
+                </button>
+              </div>
+            </div>
+            <div class="option-group">
+              <div class="option-label">Difficulté</div>
+              <div class="option-btns">
+                <button class="opt-btn" data-action="set-option" data-option="difficulty" data-value="easy">
+                  Facile<span class="opt-desc">12 erreurs tolérées</span>
+                </button>
+                <button class="opt-btn active" data-action="set-option" data-option="difficulty" data-value="standard">
+                  Standard<span class="opt-desc">8 erreurs tolérées</span>
+                </button>
+                <button class="opt-btn" data-action="set-option" data-option="difficulty" data-value="hard">
+                  Difficile<span class="opt-desc">4 erreurs tolérées</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button type="button" class="btn btn-primary" data-action="start-game">
             Commencer la partie
           </button>
@@ -373,34 +405,49 @@ const UI = (() => {
   // ── Resolution ───────────────────────────────────────
 
   function htmlResolution(s) {
-    const { items, allCorrect } = s.lastResolution;
-    const over = Game.checkGameOver();
+    const { items, allCorrect, correctCount } = s.lastResolution;
+    const over      = Game.checkGameOver();
+    const wrongCount = items.length - correctCount;
 
     function itemHtml({ player, choice, painting, guessedPainting, correct }) {
       const lines = choice ? haikuLines(choice) : [];
       return `
-        <div class="resolution-item">
-          <div class="ri-painting">
+        <div class="resolution-item ${correct ? 'correct' : 'wrong'}">
+          <div class="ri-painting-wrap"
+               ${painting ? `data-action="zoom-painting" data-painting-id="${painting.id}"` : ''}>
             ${painting
               ? `<img src="${painting.imageUrl}" alt="${escapeHtml(painting.title)}"
-                      onerror="if(this.dataset.fallback){this.style.display='none';}else{this.dataset.fallback='1';this.src='${painting.remoteUrl || ''}';}">`
-              : ''}
+                       onerror="if(this.dataset.fallback){this.style.display='none';}else{this.dataset.fallback='1';this.src='${painting.remoteUrl || ''}';}">`
+              : '<div class="ri-no-painting">—</div>'}
           </div>
-          <div class="ri-text">
-            <div class="ri-player">${escapeHtml(player.name)} — ${escapeHtml(painting?.title ?? '?')}</div>
-            <div class="ri-haiku">${lines.map(l => `« ${escapeHtml(l)} »`).join(' / ')}</div>
+          <div class="ri-body">
+            <div class="ri-header">
+              <span class="ri-player">${escapeHtml(player.name)}</span>
+              <span class="ri-result">${correct ? '✓' : '✗'}</span>
+            </div>
+            <div class="ri-painting-title">
+              ${escapeHtml(painting?.title ?? '?')}
+              <span class="text-muted"> — ${escapeHtml(painting?.artist ?? '')}</span>
+            </div>
+            <div class="ri-haiku">${lines.map(l => `« ${escapeHtml(l)} »`).join('<br>')}</div>
             ${!correct && guessedPainting
-              ? `<div class="ri-wrong">Réponse donnée : ${escapeHtml(guessedPainting.title)}</div>`
+              ? `<div class="ri-wrong-guess">→ associé à : ${escapeHtml(guessedPainting.title)}</div>`
               : ''}
           </div>
-          <div class="ri-result">${correct ? '✓' : '✗'}</div>
         </div>`;
     }
 
-    const verdictClass = allCorrect ? 'success' : 'failure';
-    const verdictMsg   = allCorrect
-      ? '✓ Toutes les associations sont correctes — la Galerie avance !'
-      : '✗ Une erreur s\'est glissée — le black-out progresse…';
+    let verdictClass, verdictMsg;
+    if (allCorrect) {
+      verdictClass = 'success';
+      verdictMsg   = `✓ Parfait ! ${correctCount} tableau${correctCount > 1 ? 'x' : ''} rejoignent la galerie.`;
+    } else if (correctCount === 0) {
+      verdictClass = 'failure';
+      verdictMsg   = `✗ Aucune association correcte — +${wrongCount} pour le black-out.`;
+    } else {
+      verdictClass = 'partial';
+      verdictMsg   = `${correctCount} correcte${correctCount > 1 ? 's' : ''} (+${correctCount} galerie) · ${wrongCount} erreur${wrongCount > 1 ? 's' : ''} (+${wrongCount} black-out)`;
+    }
 
     const nextLabel = over ? 'Voir le résultat →' : 'Tour suivant →';
 

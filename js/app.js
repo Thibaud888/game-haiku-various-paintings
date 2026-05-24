@@ -1,6 +1,20 @@
 // Entry point. Initialises the app and handles all user interactions
 // via event delegation on #app.
 
+const DURATION_SETTINGS = {
+  short:    { galleryMax: 6  },
+  standard: { galleryMax: 10 },
+  long:     { galleryMax: 15 },
+};
+const DIFFICULTY_SETTINGS = {
+  easy:     { blackoutMax: 12 },
+  standard: { blackoutMax: 8  },
+  hard:     { blackoutMax: 4  },
+};
+
+let _duration   = 'standard';
+let _difficulty = 'standard';
+
 document.addEventListener('DOMContentLoaded', () => {
   UI.renderSetup();
 });
@@ -32,8 +46,22 @@ document.getElementById('app').addEventListener('click', e => {
         const input = document.getElementById(`player-${i}`);
         return (input?.value?.trim()) || `Joueur ${i + 1}`;
       });
-      Game.init(names);
+      const settings = {
+        ...DURATION_SETTINGS[_duration],
+        ...DIFFICULTY_SETTINGS[_difficulty],
+      };
+      Game.init(names, settings);
       UI.render();
+      break;
+    }
+    case 'set-option': {
+      const optionName = target.dataset.option;
+      const value      = target.dataset.value;
+      if (optionName === 'duration')   _duration   = value;
+      if (optionName === 'difficulty') _difficulty = value;
+      target.closest('.option-btns').querySelectorAll('.opt-btn')
+            .forEach(btn => btn.classList.remove('active'));
+      target.classList.add('active');
       break;
     }
 
@@ -130,6 +158,8 @@ document.getElementById('app').addEventListener('click', e => {
 
     // ── End ────────────────────────────────────────────
     case 'restart':
+      _duration   = 'standard';
+      _difficulty = 'standard';
       UI.renderSetup();
       break;
   }
