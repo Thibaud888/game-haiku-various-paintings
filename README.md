@@ -14,11 +14,13 @@ la mission.
 
 ## Jouer
 
-Ouvrir `index.html` dans un navigateur récent (Chrome, Firefox, Safari,
-Edge). Aucune installation ni serveur requis.
+**En ligne (1 clic)** : https://thibaud888.github.io/game-haiku-various-paintings/
 
-> Les images chargent depuis Wikimedia Commons. Une connexion internet
-> est nécessaire pour les afficher.
+**En local** : ouvrir `index.html` dans un navigateur récent (Chrome,
+Firefox, Safari, Edge). Aucune installation ni serveur requis.
+
+Les images sont désormais incluses dans le repo : le jeu fonctionne
+**hors-ligne** après clonage.
 
 ## Modes
 
@@ -83,11 +85,11 @@ Options :
 - **Après téléchargement** : le jeu fonctionne **hors-ligne**, charge
   plus vite, et tu disposes d'un rapport de validité des URLs.
 
-### Commiter les images ou non ?
+### Images dans le repo
 
-Par défaut `images/` est dans `.gitignore` (repo léger, ~250 KB sans les
-images). Pour distribuer une version "prête à jouer", commenter la ligne
-`images/` dans `.gitignore` et faire `git add images/`.
+Les images sont commitées dans `images/` (~50-80 MB) pour permettre :
+- le jeu hors-ligne après simple clonage
+- l'hébergement statique sur GitHub Pages (lien ci-dessus)
 
 ## Structure du projet
 
