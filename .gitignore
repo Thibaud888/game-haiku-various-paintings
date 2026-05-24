@@ -1,7 +1,5 @@
-# Images téléchargées localement (~50-80 MB).
-# Décommenter la ligne suivante pour les commiter et les distribuer
-# avec le repo (utile pour partager une version "prête à jouer").
-images/
+# Images téléchargées par scripts/download-paintings.mjs.
+# Commitées dans le repo pour le jeu hors-ligne et l'hébergement statique (GitHub Pages).
 
 # Rapports générés par les scripts
 scripts/download-report.json
