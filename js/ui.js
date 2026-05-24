@@ -205,12 +205,27 @@ const UI = (() => {
     const ready  = Game.isDraftReady();
     const { HAIKU_LENGTH } = Game.getConstants();
 
-    // 6 paintings
-    const paintingsHtml = s.turnPaintings.map((p, i) => paintingCardHtml(p, i, {
-      selected: d.paintingId === p.id,
-      action: 'zoom-painting',
-      dataPaintingId: p.id,
-    })).join('');
+    // 6 paintings — image zone zooms, dedicated "Choisir" button selects
+    const paintingsHtml = s.turnPaintings.map((p, i) => {
+      const selected = d.paintingId === p.id;
+      const cls = ['painting-card', selected && 'selected'].filter(Boolean).join(' ');
+      return `
+        <div class="${cls}" data-action="zoom-painting" data-painting-id="${p.id}">
+          ${paintingImgHtml(p)}
+          <div class="painting-number">${i + 1}</div>
+          <div class="painting-info">
+            <div class="title">${escapeHtml(p.title)}</div>
+            <div class="artist">${escapeHtml(p.artist)}, ${p.year}</div>
+          </div>
+          <div class="painting-card-btns">
+            <button class="btn btn-sm" data-action="zoom-painting" data-painting-id="${p.id}">Agrandir</button>
+            <button class="btn btn-sm btn-primary" data-action="select-painting" data-painting-id="${p.id}"
+                    ${selected ? 'disabled' : ''}>
+              ${selected ? '✓ Choisi' : 'Choisir'}
+            </button>
+          </div>
+        </div>`;
+    }).join('');
 
     // Composition slots
     const slotsHtml = Array.from({ length: HAIKU_LENGTH }, (_, slotIdx) => {
@@ -262,7 +277,7 @@ const UI = (() => {
         <div class="compose-header">
           <h2>${escapeHtml(player.name)}</h2>
           <p class="text-muted">
-            Choisissez un tableau (cliquez pour agrandir) et composez votre haïku en 3 vers.
+            Cliquez sur l'image pour l'agrandir, puis « Choisir » pour sélectionner un tableau. Composez ensuite votre haïku en 3 vers.
           </p>
         </div>
 
@@ -450,7 +465,7 @@ const UI = (() => {
 
     return `
       <div class="modal-overlay" data-action="close-zoom">
-        <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-content">
           <button class="modal-close" data-action="close-zoom" aria-label="Fermer">×</button>
           <div class="modal-img-wrap">
             <img src="${painting.imageUrl}"

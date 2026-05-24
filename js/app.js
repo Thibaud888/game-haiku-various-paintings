@@ -56,14 +56,24 @@ document.getElementById('app').addEventListener('click', e => {
       UI.render();
       break;
     }
-    case 'close-zoom':
+    case 'close-zoom': {
+      // Only close when clicking the overlay background or the × button,
+      // not when clicking elsewhere inside .modal-content
+      if (e.target.closest('.modal-content') && !e.target.closest('.modal-close')) break;
       Game.closeZoom();
       UI.render();
       break;
+    }
     case 'select-painting-from-modal': {
       const paintingId = parseInt(target.dataset.paintingId, 10);
       Game.selectPainting(paintingId);
       Game.closeZoom();
+      UI.render();
+      break;
+    }
+    case 'select-painting': {
+      const paintingId = parseInt(target.dataset.paintingId, 10);
+      Game.selectPainting(paintingId);
       UI.render();
       break;
     }
