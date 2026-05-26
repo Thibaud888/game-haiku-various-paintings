@@ -14,6 +14,7 @@ const DIFFICULTY_SETTINGS = {
 
 let _duration   = 'standard';
 let _difficulty = 'standard';
+let _story      = 'standard';
 
 let timerInterval = null;
 
@@ -71,6 +72,7 @@ document.getElementById('app').addEventListener('click', e => {
         ...DIFFICULTY_SETTINGS[_difficulty],
         timerEnabled,
         timerDuration: timerMinutes * 60,
+        storyMode: _story,
       };
       Game.init(names, settings);
       UI.render();
@@ -81,11 +83,18 @@ document.getElementById('app').addEventListener('click', e => {
       const value      = target.dataset.value;
       if (optionName === 'duration')   _duration   = value;
       if (optionName === 'difficulty') _difficulty = value;
+      if (optionName === 'story')      _story      = value;
       target.closest('.option-btns').querySelectorAll('.opt-btn')
             .forEach(btn => btn.classList.remove('active'));
       target.classList.add('active');
       break;
     }
+
+    // ── Intro cinematic ────────────────────────────────
+    case 'dismiss-intro':
+      Game.dismissIntro();
+      UI.render();
+      break;
 
     // ── Turn reveal ────────────────────────────────────
     case 'begin-secret':
@@ -185,17 +194,25 @@ document.getElementById('app').addEventListener('click', e => {
       stopTimer();
       _duration   = 'standard';
       _difficulty = 'standard';
+      _story      = 'standard';
       UI.renderSetup();
       break;
   }
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const s = Game.getState();
-    if (s && s.zoomedPaintingId !== null) {
-      Game.closeZoom();
-      UI.render();
-    }
+  const s = Game.getState();
+  if (!s) return;
+
+  if (s.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    Game.dismissIntro();
+    UI.render();
+    return;
+  }
+
+  if (e.key === 'Escape' && s.zoomedPaintingId !== null) {
+    Game.closeZoom();
+    UI.render();
   }
 });

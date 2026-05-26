@@ -17,6 +17,13 @@ const Game = (() => {
     return a;
   }
 
+  function turnMood() {
+    const ratio = state.blackoutProgress / state.blackoutMax;
+    if (ratio >= 0.5) return 'dire';
+    if (state.blackoutProgress > state.galleryProgress) return 'tense';
+    return 'calm';
+  }
+
   // ── Public API ───────────────────────────────────────
 
   function init(playerNames, settings = {}) {
@@ -32,7 +39,11 @@ const Game = (() => {
       return { id, name, verseHand: hand };
     });
 
-    const { timerEnabled = false, timerDuration = 180 } = settings;
+    const {
+      timerEnabled = false,
+      timerDuration = 180,
+      storyMode = 'standard',
+    } = settings;
 
     state = {
       phase: 'turn-reveal',
@@ -65,9 +76,22 @@ const Game = (() => {
       timerEnabled,
       timerDuration,
       timerSecondsLeft: 0,
+
+      storyMode,
+      lastBeats: {},
     };
 
     pickTurnPaintings();
+
+    if (storyMode !== 'sobre') {
+      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+      state.phase = 'intro';
+    }
+  }
+
+  function dismissIntro() {
+    state.phase = 'turn-reveal';
   }
 
   function emptyDraft() {
@@ -92,12 +116,18 @@ const Game = (() => {
     state.choices     = [];
     state.guesses     = {};
     state.draft       = emptyDraft();
-    state.phase       = 'pass-before';
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
+    }
+    state.phase = 'pass-before';
   }
 
   // Shown after pass screen — player enters the compose phase
   function playerReady() {
     if (state.timerEnabled) state.timerSecondsLeft = state.timerDuration;
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.composeWhisper = STORY.pick(STORY.composeWhisper);
+    }
     state.phase = 'secret-compose';
   }
 
@@ -151,11 +181,17 @@ const Game = (() => {
     const isLast = state.secretIndex === state.composeOrder.length - 1;
     if (isLast) {
       state.draft = emptyDraft();
+      if (state.storyMode !== 'sobre') {
+        state.lastBeats.deductionTension = STORY.pick(STORY.deductionTension);
+      }
       state.phase = 'deduction';
       state.activeDeductionPlayer = state.players[0].id;
     } else {
       state.secretIndex++;
       state.draft = emptyDraft();
+      if (state.storyMode !== 'sobre') {
+        state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
+      }
       state.phase = 'pass-before';
     }
   }
@@ -192,6 +228,11 @@ const Game = (() => {
   function confirmGuesses() {
     if (!allGuessesAssigned()) return;
     resolveRound();
+    if (state.storyMode !== 'sobre') {
+      const pool = state.lastResolution.allCorrect
+        ? STORY.resolutionSuccess : STORY.resolutionFailure;
+      state.lastBeats.resolutionBeat = STORY.pick(pool);
+    }
     state.phase = 'resolution';
   }
 
@@ -222,11 +263,19 @@ const Game = (() => {
 
   function nextTurn() {
     if (checkGameOver()) {
+      if (state.storyMode !== 'sobre') {
+        const pool = state.galleryProgress >= state.galleryMax
+          ? STORY.endingWin : STORY.endingLose;
+        state.lastBeats.endingEpilogue = STORY.pick(pool);
+      }
       state.phase = 'end';
       return;
     }
     state.turnIndex++;
     pickTurnPaintings();
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+    }
     state.phase = 'turn-reveal';
   }
 
@@ -258,6 +307,7 @@ const Game = (() => {
     setPhase,
     beginSecretPhase,
     playerReady,
+    dismissIntro,
     tickTimer,
     selectPainting,
     addVerse,
