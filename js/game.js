@@ -42,7 +42,7 @@ const Game = (() => {
     const {
       timerEnabled = false,
       timerDuration = 180,
-      storyMode = 'standard',
+      storyMode = 'immersif',
     } = settings;
 
     state = {
