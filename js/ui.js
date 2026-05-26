@@ -10,6 +10,7 @@ const UI = (() => {
 
     let html = '';
     switch (s.phase) {
+      case 'intro':          html = htmlIntro(s); break;
       case 'turn-reveal':    html = htmlTurnReveal(s); break;
       case 'pass-before':    html = htmlPassBefore(s); break;
       case 'secret-compose': html = htmlSecretCompose(s); break;
@@ -44,9 +45,6 @@ const UI = (() => {
       <div class="fb-title">${title}</div>
       <div class="fb-artist">${artist}</div>
       <div class="fb-year">${painting.year}</div>`;
-    // Fallback en cascade : local → remote Wikimedia → fiche stylée.
-    // 1er onerror : bascule sur l'URL distante et reconfigure onerror pour
-    // afficher la fiche stylée si le distant échoue aussi.
     const remote = painting.remoteUrl || '';
     return `
       <div class="painting-img-wrap">
@@ -110,6 +108,11 @@ const UI = (() => {
     return (choice.verses || []).map(id => verseText(id));
   }
 
+  function storyBeatHtml(text, cls = '') {
+    if (!text) return '';
+    return `<p class="story-beat ${cls}">${escapeHtml(text)}</p>`;
+  }
+
   // ── Setup ────────────────────────────────────────────
 
   function renderSetup() {
@@ -160,6 +163,20 @@ const UI = (() => {
                 </button>
               </div>
             </div>
+            <div class="option-group">
+              <div class="option-label">Mode histoire</div>
+              <div class="option-btns">
+                <button class="opt-btn" data-action="set-option" data-option="story" data-value="sobre">
+                  Sobre<span class="opt-desc">Texte d'origine</span>
+                </button>
+                <button class="opt-btn active" data-action="set-option" data-option="story" data-value="standard">
+                  Standard<span class="opt-desc">Intro + moments clés</span>
+                </button>
+                <button class="opt-btn" data-action="set-option" data-option="story" data-value="immersif">
+                  Immersif<span class="opt-desc">Ambiance complète</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="timer-row">
@@ -195,12 +212,37 @@ const UI = (() => {
     document.getElementById('count-display').textContent = count;
   }
 
+  // ── Intro cinematic ──────────────────────────────────
+
+  function htmlIntro(s) {
+    const lines = s.lastBeats.introLines || [];
+    const isImmersif = s.storyMode === 'immersif';
+    const linesHtml = lines.map((line, i) =>
+      `<p class="intro-line" style="animation-delay:${0.3 + i * 1.2}s">${escapeHtml(line)}</p>`
+    ).join('');
+    const btnDelay = 0.3 + lines.length * 1.2 + 0.4;
+    return `
+      <section class="screen-intro">
+        <div class="intro-eyebrow">Nuit au Musée</div>
+        <div class="intro-lines">
+          ${linesHtml}
+        </div>
+        <button class="btn btn-primary intro-btn"
+                data-action="dismiss-intro"
+                style="animation-delay:${btnDelay}s">
+          ${isImmersif ? 'Entrer dans le musée, sans bruit →' : 'Entrer dans le musée →'}
+        </button>
+      </section>`;
+  }
+
   // ── Turn reveal ──────────────────────────────────────
 
   function htmlTurnReveal(s) {
+    const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.turnPrelude) : '';
     return `
       <section class="screen-turn-reveal">
         <div class="turn-header">
+          ${beat}
           <h2>Tour ${s.turnIndex + 1} — Les tableaux du soir</h2>
           <p>Observez les six œuvres. Cliquez pour les agrandir. La phase secrète va commencer.</p>
         </div>
@@ -222,11 +264,13 @@ const UI = (() => {
   // ── Pass screen ──────────────────────────────────────
 
   function htmlPassBefore(s) {
-    const player = s.players[s.secretIndex];
+    const player  = s.players[s.secretIndex];
     const isFirst = s.secretIndex === 0;
     const sub = isFirst
       ? 'Les autres joueurs regardent ailleurs.'
       : 'Le joueur précédent s\'éloigne de l\'écran.';
+    const whisper = s.storyMode === 'immersif'
+      ? storyBeatHtml(s.lastBeats.passWhisper, 'beat-center') : '';
     return `
       <section class="screen-pass">
         <div class="pass-icon">🎨</div>
@@ -235,6 +279,7 @@ const UI = (() => {
           ${sub}<br>
           <strong>${escapeHtml(player.name)}</strong>, appuyez quand vous êtes seul(e) à voir l'écran.
         </p>
+        ${whisper}
         <button class="btn btn-primary" data-action="player-ready">
           J'ai l'écran, je suis prêt(e)
         </button>
@@ -326,6 +371,9 @@ const UI = (() => {
       timerHtml = `<div class="timer-display ${cls}">${label}</div>`;
     }
 
+    const whisper = s.storyMode === 'immersif'
+      ? storyBeatHtml(s.lastBeats.composeWhisper) : '';
+
     return `
       <section class="screen-compose">
         <div class="compose-header">
@@ -333,6 +381,7 @@ const UI = (() => {
             <h2>${escapeHtml(player.name)}</h2>
             ${timerHtml}
           </div>
+          ${whisper}
           <p class="text-muted">
             Cliquez sur l'image pour l'agrandir, puis « Choisir » pour sélectionner un tableau. Composez ensuite votre haïku en 3 vers.
           </p>
@@ -390,6 +439,7 @@ const UI = (() => {
     }
 
     const allDone = Game.allGuessesAssigned();
+    const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.deductionTension) : '';
 
     const paintingsHtml = s.turnPaintings.map((p, i) => {
       const isGuessed = Object.values(s.guesses).includes(p.id);
@@ -403,6 +453,7 @@ const UI = (() => {
     return `
       <section class="screen-deduction">
         <div class="deduction-header">
+          ${beat}
           <h2>Déduction collective</h2>
           <p class="text-muted">
             Sélectionnez un haïku, puis cliquez sur le tableau qu'il décrit.
@@ -475,12 +526,14 @@ const UI = (() => {
     }
 
     const nextLabel = over ? 'Voir le résultat →' : 'Tour suivant →';
+    const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.resolutionBeat) : '';
 
     return `
       <section class="screen-resolution">
         <div class="resolution-header">
           <h2>Résolution</h2>
         </div>
+        ${beat}
         <div class="resolution-verdict ${verdictClass}">${verdictMsg}</div>
         ${tracksHtml(s)}
         <div class="resolution-list">
@@ -500,10 +553,13 @@ const UI = (() => {
     const msg = won
       ? 'Vous avez rejoint la Grande Galerie avant le black-out. Le musée est sauvé !'
       : 'Les lumières se sont éteintes une à une. Le musée a sombré dans l\'obscurité…';
+    const epilogue = s.storyMode !== 'sobre' && s.lastBeats.endingEpilogue
+      ? `<p class="end-epilogue">${escapeHtml(s.lastBeats.endingEpilogue)}</p>` : '';
     return `
       <section class="screen-end">
         <h1 class="${won ? 'win' : 'lose'}">${won ? 'Victoire !' : 'Black-out.'}</h1>
         <p class="end-sub">${msg}</p>
+        ${epilogue}
         ${tracksHtml(s)}
         <button class="btn btn-primary" data-action="restart">Nouvelle partie</button>
       </section>`;
