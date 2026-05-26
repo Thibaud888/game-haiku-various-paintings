@@ -79,6 +79,8 @@ const Game = (() => {
 
       storyMode,
       lastBeats: {},
+
+      cinematicIndex: 0,
     };
 
     pickTurnPaintings();
@@ -91,6 +93,19 @@ const Game = (() => {
   }
 
   function dismissIntro() {
+    state.cinematicIndex = 0;
+    state.phase = 'turn-reveal-cinematic';
+  }
+
+  function advanceCinematic() {
+    if (state.cinematicIndex < state.turnPaintings.length - 1) {
+      state.cinematicIndex++;
+    } else {
+      state.phase = 'turn-reveal';
+    }
+  }
+
+  function skipCinematic() {
     state.phase = 'turn-reveal';
   }
 
@@ -275,8 +290,11 @@ const Game = (() => {
     pickTurnPaintings();
     if (state.storyMode !== 'sobre') {
       state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+      state.cinematicIndex = 0;
+      state.phase = 'turn-reveal-cinematic';
+    } else {
+      state.phase = 'turn-reveal';
     }
-    state.phase = 'turn-reveal';
   }
 
   // ── Accessors ────────────────────────────────────────
@@ -308,6 +326,8 @@ const Game = (() => {
     beginSecretPhase,
     playerReady,
     dismissIntro,
+    advanceCinematic,
+    skipCinematic,
     tickTimer,
     selectPainting,
     addVerse,

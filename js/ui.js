@@ -10,8 +10,9 @@ const UI = (() => {
 
     let html = '';
     switch (s.phase) {
-      case 'intro':          html = htmlIntro(s); break;
-      case 'turn-reveal':    html = htmlTurnReveal(s); break;
+      case 'intro':                html = htmlIntro(s); break;
+      case 'turn-reveal-cinematic': html = htmlTurnRevealCinematic(s); break;
+      case 'turn-reveal':          html = htmlTurnReveal(s); break;
       case 'pass-before':    html = htmlPassBefore(s); break;
       case 'secret-compose': html = htmlSecretCompose(s); break;
       case 'deduction':      html = htmlDeduction(s); break;
@@ -229,6 +230,47 @@ const UI = (() => {
                 style="animation-delay:${btnDelay}s">
           Entrer dans le musée, sans bruit →
         </button>
+      </section>`;
+  }
+
+  // ── Cinematic painting reveal (mode immersif) ────────
+
+  function htmlTurnRevealCinematic(s) {
+    const idx     = s.cinematicIndex;
+    const total   = s.turnPaintings.length;
+    const painting = s.turnPaintings[idx];
+    const title   = escapeHtml(painting.title);
+    const artist  = escapeHtml(painting.artist);
+    const remote  = painting.remoteUrl || '';
+
+    const dotsHtml = Array.from({ length: total }, (_, i) =>
+      `<span class="cin-dot${i < idx ? ' past' : i === idx ? ' current' : ''}"></span>`
+    ).join('');
+
+    return `
+      <section class="screen-cinematic" data-action="advance-cinematic">
+        <div class="cin-counter">${idx + 1} / ${total}</div>
+        <div class="cin-painting-wrap">
+          <img
+            class="cin-painting-img"
+            src="${painting.imageUrl}"
+            alt="${title}"
+            onerror="if(this.dataset.fallback){this.style.display='none';this.nextElementSibling.style.display='flex';}else{this.dataset.fallback='1';this.src='${remote}';}"
+          >
+          <div class="cin-fallback" style="display:none">
+            <div class="fb-title">${title}</div>
+            <div class="fb-artist">${artist}</div>
+            <div class="fb-year">${painting.year}</div>
+          </div>
+        </div>
+        <div class="cin-info">
+          <div class="cin-title">${title}</div>
+          <div class="cin-artist">${artist} · ${painting.year}</div>
+        </div>
+        <div class="cin-footer">
+          <div class="cin-dots">${dotsHtml}</div>
+          <button class="btn" data-action="skip-cinematic">Passer</button>
+        </div>
       </section>`;
   }
 
