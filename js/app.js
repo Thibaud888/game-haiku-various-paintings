@@ -17,6 +17,23 @@ let _difficulty = 'standard';
 let _story      = 'immersif';
 
 let timerInterval = null;
+let _cinematicTimer = null;
+
+function stopCinematic() {
+  if (_cinematicTimer !== null) { clearTimeout(_cinematicTimer); _cinematicTimer = null; }
+}
+
+function renderAndMaybeSchedule() {
+  stopCinematic();
+  UI.render();
+  const s = Game.getState();
+  if (s && s.phase === 'turn-reveal-cinematic') {
+    _cinematicTimer = setTimeout(() => {
+      Game.advanceCinematic();
+      renderAndMaybeSchedule();
+    }, 2800);
+  }
+}
 
 function stopTimer() {
   if (timerInterval !== null) {
@@ -93,7 +110,17 @@ document.getElementById('app').addEventListener('click', e => {
     // ── Intro cinematic ────────────────────────────────
     case 'dismiss-intro':
       Game.dismissIntro();
-      UI.render();
+      renderAndMaybeSchedule();
+      break;
+
+    // ── Painting cinematic reveal ──────────────────────
+    case 'advance-cinematic':
+      Game.advanceCinematic();
+      renderAndMaybeSchedule();
+      break;
+    case 'skip-cinematic':
+      Game.skipCinematic();
+      renderAndMaybeSchedule();
       break;
 
     // ── Turn reveal ────────────────────────────────────
@@ -186,12 +213,13 @@ document.getElementById('app').addEventListener('click', e => {
     // ── Resolution ─────────────────────────────────────
     case 'next-turn':
       Game.nextTurn();
-      UI.render();
+      renderAndMaybeSchedule();
       break;
 
     // ── End ────────────────────────────────────────────
     case 'restart':
       stopTimer();
+      stopCinematic();
       _duration   = 'standard';
       _difficulty = 'standard';
       _story      = 'immersif';
@@ -207,7 +235,20 @@ document.addEventListener('keydown', e => {
   if (s.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();
     Game.dismissIntro();
-    UI.render();
+    renderAndMaybeSchedule();
+    return;
+  }
+
+  if (s.phase === 'turn-reveal-cinematic') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      Game.skipCinematic();
+      renderAndMaybeSchedule();
+    } else if (e.key === ' ' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      Game.advanceCinematic();
+      renderAndMaybeSchedule();
+    }
     return;
   }
 
