@@ -29,7 +29,7 @@ function startTimer() {
   stopTimer();
   timerInterval = setInterval(() => {
     Game.tickTimer();
-    UI.render();
+    UI.updateTimer();
     if (Game.getState()?.timerSecondsLeft === 0) stopTimer();
   }, 1000);
 }
