@@ -9,20 +9,17 @@ const STORY = (() => {
   const introSequences = [
     [
       'Le musée s\'éteint, salle après salle.',
-      'Vous étiez en ronde quand les lumières ont cédé.',
-      'Seuls les tableaux restent vos guides dans l\'obscurité.',
-      'Rejoignez la Grande Galerie avant que le black-out ne vous engloutisse.',
+      'Seuls les tableaux murmurent dans le noir.',
+      'Rejoignez la Grande Galerie avant le black-out.',
     ],
     [
       'Un craquement. Puis le silence des salles vides.',
-      'La panne est totale. Vos lampes, épuisées.',
-      'Seule la mémoire des œuvres peut vous guider.',
+      'Vos lampes sont épuisées. Seule la mémoire guide.',
       'La Grande Galerie est là, quelque part dans le noir.',
     ],
     [
       'L\'horloge du musée s\'est arrêtée.',
-      'Dispersés dans les ailes, vous cherchez la sortie.',
-      'Les tableaux murmurent dans l\'obscurité.',
+      'Les tableaux veillent dans l\'ombre des couloirs.',
       'Le temps presse. La Grande Galerie vous attend.',
     ],
   ];

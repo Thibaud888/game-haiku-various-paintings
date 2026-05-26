@@ -169,11 +169,8 @@ const UI = (() => {
                 <button class="opt-btn" data-action="set-option" data-option="story" data-value="sobre">
                   Sobre<span class="opt-desc">Texte d'origine</span>
                 </button>
-                <button class="opt-btn active" data-action="set-option" data-option="story" data-value="standard">
-                  Standard<span class="opt-desc">Intro + moments clés</span>
-                </button>
-                <button class="opt-btn" data-action="set-option" data-option="story" data-value="immersif">
-                  Immersif<span class="opt-desc">Ambiance complète</span>
+                <button class="opt-btn active" data-action="set-option" data-option="story" data-value="immersif">
+                  Immersif<span class="opt-desc">Intro + ambiance complète</span>
                 </button>
               </div>
             </div>
@@ -202,7 +199,7 @@ const UI = (() => {
   function updatePlayerInputs(count) {
     const container = document.getElementById('player-names');
     if (!container) return;
-    const defaultNames = ['Alice', 'Bob', 'Clara', 'David', 'Élise'];
+    const defaultNames = ['Alice', 'Bob', 'Clara', 'David', 'Élise', 'Félix'];
     container.innerHTML = Array.from({ length: count }, (_, i) => `
       <div class="player-input">
         <label for="player-${i}">Joueur ${i + 1}</label>
@@ -218,9 +215,9 @@ const UI = (() => {
     const lines = s.lastBeats.introLines || [];
     const isImmersif = s.storyMode === 'immersif';
     const linesHtml = lines.map((line, i) =>
-      `<p class="intro-line" style="animation-delay:${0.3 + i * 1.2}s">${escapeHtml(line)}</p>`
+      `<p class="intro-line" style="animation-delay:${0.3 + i * 2.0}s">${escapeHtml(line)}</p>`
     ).join('');
-    const btnDelay = 0.3 + lines.length * 1.2 + 0.4;
+    const btnDelay = 0.3 + lines.length * 2.0 + 0.6;
     return `
       <section class="screen-intro">
         <div class="intro-eyebrow">Nuit au Musée</div>
@@ -230,7 +227,7 @@ const UI = (() => {
         <button class="btn btn-primary intro-btn"
                 data-action="dismiss-intro"
                 style="animation-delay:${btnDelay}s">
-          ${isImmersif ? 'Entrer dans le musée, sans bruit →' : 'Entrer dans le musée →'}
+          Entrer dans le musée, sans bruit →
         </button>
       </section>`;
   }

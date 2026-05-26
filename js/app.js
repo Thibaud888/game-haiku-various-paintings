@@ -14,7 +14,7 @@ const DIFFICULTY_SETTINGS = {
 
 let _duration   = 'standard';
 let _difficulty = 'standard';
-let _story      = 'standard';
+let _story      = 'immersif';
 
 let timerInterval = null;
 
@@ -50,7 +50,7 @@ document.getElementById('app').addEventListener('click', e => {
     case 'count-inc': {
       const display = document.getElementById('count-display');
       const current = parseInt(display.textContent, 10);
-      if (current < 5) UI.updatePlayerInputs(current + 1);
+      if (current < 6) UI.updatePlayerInputs(current + 1);
       break;
     }
     case 'count-dec': {
@@ -194,7 +194,7 @@ document.getElementById('app').addEventListener('click', e => {
       stopTimer();
       _duration   = 'standard';
       _difficulty = 'standard';
-      _story      = 'standard';
+      _story      = 'immersif';
       UI.renderSetup();
       break;
   }
