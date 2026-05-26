@@ -15,6 +15,24 @@ const DIFFICULTY_SETTINGS = {
 let _duration   = 'standard';
 let _difficulty = 'standard';
 
+let timerInterval = null;
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    Game.tickTimer();
+    UI.render();
+    if (Game.getState()?.timerSecondsLeft === 0) stopTimer();
+  }, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   UI.renderSetup();
 });
@@ -46,9 +64,13 @@ document.getElementById('app').addEventListener('click', e => {
         const input = document.getElementById(`player-${i}`);
         return (input?.value?.trim()) || `Joueur ${i + 1}`;
       });
+      const timerEnabled = document.getElementById('timer-enabled')?.checked ?? false;
+      const timerMinutes = parseInt(document.getElementById('timer-duration')?.value, 10) || 3;
       const settings = {
         ...DURATION_SETTINGS[_duration],
         ...DIFFICULTY_SETTINGS[_difficulty],
+        timerEnabled,
+        timerDuration: timerMinutes * 60,
       };
       Game.init(names, settings);
       UI.render();
@@ -74,6 +96,7 @@ document.getElementById('app').addEventListener('click', e => {
     // ── Pass screen ────────────────────────────────────
     case 'player-ready':
       Game.playerReady();
+      if (Game.getState().timerEnabled) startTimer();
       UI.render();
       break;
 
@@ -134,6 +157,7 @@ document.getElementById('app').addEventListener('click', e => {
       break;
     }
     case 'confirm-choice':
+      stopTimer();
       Game.confirmChoice();
       UI.render();
       break;
@@ -158,6 +182,7 @@ document.getElementById('app').addEventListener('click', e => {
 
     // ── End ────────────────────────────────────────────
     case 'restart':
+      stopTimer();
       _duration   = 'standard';
       _difficulty = 'standard';
       UI.renderSetup();

@@ -32,6 +32,8 @@ const Game = (() => {
       return { id, name, verseHand: hand };
     });
 
+    const { timerEnabled = false, timerDuration = 180 } = settings;
+
     state = {
       phase: 'turn-reveal',
 
@@ -59,6 +61,10 @@ const Game = (() => {
       lastResolution: null,
 
       zoomedPaintingId: null,
+
+      timerEnabled,
+      timerDuration,
+      timerSecondsLeft: 0,
     };
 
     pickTurnPaintings();
@@ -91,7 +97,12 @@ const Game = (() => {
 
   // Shown after pass screen — player enters the compose phase
   function playerReady() {
+    if (state.timerEnabled) state.timerSecondsLeft = state.timerDuration;
     state.phase = 'secret-compose';
+  }
+
+  function tickTimer() {
+    if (state.timerSecondsLeft > 0) state.timerSecondsLeft--;
   }
 
   // ── Compose actions ───────────────────────────────────
@@ -247,6 +258,7 @@ const Game = (() => {
     setPhase,
     beginSecretPhase,
     playerReady,
+    tickTimer,
     selectPainting,
     addVerse,
     removeVerse,

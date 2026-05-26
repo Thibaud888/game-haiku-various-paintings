@@ -162,6 +162,18 @@ const UI = (() => {
             </div>
           </div>
 
+          <div class="timer-row">
+            <label class="timer-toggle-label">
+              <input type="checkbox" id="timer-enabled"
+                     onchange="document.getElementById('timer-duration-wrap').style.opacity=this.checked?'1':'0.35'">
+              <span>Chronomètre</span>
+            </label>
+            <div class="timer-duration-wrap" id="timer-duration-wrap" style="opacity:0.35">
+              <input type="number" id="timer-duration" min="1" max="30" value="3"
+                     class="timer-duration-input">
+              <span class="timer-duration-unit">min par joueur</span>
+            </div>
+          </div>
           <button type="button" class="btn btn-primary" data-action="start-game">
             Commencer la partie
           </button>
@@ -304,10 +316,23 @@ const UI = (() => {
           return `<span class="chosen-painting">✓ ${escapeHtml(p.title)} — <span class="text-muted">${escapeHtml(p.artist)}</span></span>`;
         })();
 
+    let timerHtml = '';
+    if (s.timerEnabled) {
+      const secs = s.timerSecondsLeft;
+      const mins = Math.floor(secs / 60);
+      const ss   = String(secs % 60).padStart(2, '0');
+      const cls  = secs === 0 ? 'expired' : secs <= 30 ? 'warning' : '';
+      const label = secs === 0 ? 'Temps écoulé !' : `${mins}:${ss}`;
+      timerHtml = `<div class="timer-display ${cls}">${label}</div>`;
+    }
+
     return `
       <section class="screen-compose">
         <div class="compose-header">
-          <h2>${escapeHtml(player.name)}</h2>
+          <div class="compose-header-top">
+            <h2>${escapeHtml(player.name)}</h2>
+            ${timerHtml}
+          </div>
           <p class="text-muted">
             Cliquez sur l'image pour l'agrandir, puis « Choisir » pour sélectionner un tableau. Composez ensuite votre haïku en 3 vers.
           </p>

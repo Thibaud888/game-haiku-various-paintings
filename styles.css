@@ -294,6 +294,95 @@ h1, h2, h3 {
 }
 .pass-subtitle { color: var(--text-muted); max-width: 420px; line-height: 1.7; }
 
+/* ── Timer (setup + compose) ─────────────────────── */
+
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.timer-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.timer-toggle-label input[type="checkbox"] {
+  accent-color: var(--gold);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.timer-duration-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+
+.timer-duration-input {
+  width: 58px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+
+.timer-duration-input:focus { outline: none; border-color: var(--gold); }
+
+.timer-duration-unit { color: var(--text-muted); font-size: 0.85rem; }
+
+.compose-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.timer-display {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  min-width: 90px;
+  text-align: right;
+  transition: color 0.3s;
+}
+
+.timer-display.warning {
+  color: #e07a29;
+  animation: timerPulse 1s ease-in-out infinite;
+}
+
+.timer-display.expired {
+  color: var(--danger);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  animation: timerPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
 /* ── Compose screen (pick + haiku combined) ──────── */
 
 .screen-compose { display: flex; flex-direction: column; gap: 22px; }
