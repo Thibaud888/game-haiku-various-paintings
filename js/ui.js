@@ -489,8 +489,21 @@ const UI = (() => {
       });
     }).join('');
 
+    const activeBannerHtml = (() => {
+      if (activeId === null) return '';
+      const activePlayer = s.players.find(p => p.id === activeId);
+      const activeChoice = s.choices.find(c => c.playerId === activeId);
+      const activeLines  = activeChoice ? haikuLines(activeChoice) : [];
+      return `
+        <div class="deduction-active-banner">
+          <div class="dab-player">${escapeHtml(activePlayer.name)}</div>
+          <div class="dab-haiku">${activeLines.map(l => escapeHtml(l)).join(' · ')}</div>
+        </div>`;
+    })();
+
     return `
       <section class="screen-deduction">
+        ${activeBannerHtml}
         <div class="deduction-header">
           ${beat}
           <h2>Déduction collective</h2>
