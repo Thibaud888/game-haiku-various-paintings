@@ -17,21 +17,22 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  padding-top: env(safe-area-inset-top, 0);
 }
 
 #app {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px 16px 80px;
+  padding: 20px 16px max(80px, calc(20px + env(safe-area-inset-bottom)));
   min-height: 100vh;
 }
 
 h1, h2, h3 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 400;
   letter-spacing: 0.04em;
 }
@@ -54,11 +55,18 @@ h1, h2, h3 {
   border-radius: var(--radius);
   user-select: none;
 }
-.btn:hover { background: var(--gold); color: var(--bg); }
+.btn:hover  { background: var(--gold); color: var(--bg); }
+.btn:active { background: var(--gold); color: var(--bg); }
 .btn-primary { background: var(--gold); color: var(--bg); }
-.btn-primary:hover { background: var(--gold-light); border-color: var(--gold-light); }
+.btn-primary:hover  { background: var(--gold-light); border-color: var(--gold-light); }
+.btn-primary:active { background: var(--gold-light); border-color: var(--gold-light); }
 .btn-sm { padding: 7px 16px; font-size: 0.75rem; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+.btn, .painting-card, .verse-token, .haiku-entry, .opt-btn,
+.slot-btn, .count-btn, .modal-close {
+  touch-action: manipulation;
+}
 
 /* ── Setup ────────────────────────────────────────── */
 
@@ -161,7 +169,8 @@ h1, h2, h3 {
   transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
   position: relative;
 }
-.painting-card:hover {
+.painting-card:hover,
+.painting-card:active {
   border-color: var(--gold);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
@@ -263,7 +272,8 @@ h1, h2, h3 {
   transition: border-color 0.15s, color 0.15s;
   text-align: center; line-height: 1.6;
 }
-.opt-btn:hover { border-color: var(--gold); color: var(--text); }
+.opt-btn:hover,
+.opt-btn:active { border-color: var(--gold); color: var(--text); }
 .opt-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
 .opt-desc { display: block; font-size: 0.7rem; color: var(--text-muted); }
 .opt-btn.active .opt-desc { color: var(--gold); opacity: 0.7; }
@@ -570,7 +580,7 @@ h1, h2, h3 {
 
 .slot-controls { display: flex; gap: 4px; }
 .slot-btn {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
@@ -580,9 +590,11 @@ h1, h2, h3 {
   display: flex; align-items: center; justify-content: center;
   transition: border-color 0.15s, color 0.15s;
 }
-.slot-btn:hover { border-color: var(--gold); color: var(--gold); }
+.slot-btn:hover,
+.slot-btn:active { border-color: var(--gold); color: var(--gold); }
 .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
-.slot-btn.remove:hover { border-color: var(--danger); color: var(--danger); }
+.slot-btn.remove:hover,
+.slot-btn.remove:active { border-color: var(--danger); color: var(--danger); }
 
 /* ── Verse hand ──────────────────────────────────── */
 
@@ -619,7 +631,8 @@ h1, h2, h3 {
   text-align: center;
   line-height: 1.4;
 }
-.verse-token:hover { border-color: var(--gold); color: var(--gold-light); }
+.verse-token:hover,
+.verse-token:active { border-color: var(--gold); color: var(--gold-light); }
 .verse-token.used {
   opacity: 0.35;
   cursor: not-allowed;
@@ -651,7 +664,8 @@ h1, h2, h3 {
   cursor: pointer;
   transition: border-color 0.18s;
 }
-.haiku-entry:hover { border-color: var(--gold); }
+.haiku-entry:hover,
+.haiku-entry:active { border-color: var(--gold); }
 .haiku-entry.active { border-color: var(--gold); background: var(--gold-dim); }
 .haiku-entry.assigned { border-color: var(--success); }
 
@@ -818,7 +832,7 @@ h1, h2, h3 {
   background: rgba(13,17,23,0.92);
   border: 1px solid var(--border);
   color: var(--text);
-  width: 34px; height: 34px;
+  width: 44px; height: 44px;
   font-size: 1.4rem;
   cursor: pointer;
   border-radius: 50%;
@@ -826,7 +840,8 @@ h1, h2, h3 {
   transition: border-color 0.15s, color 0.15s;
   z-index: 5;
 }
-.modal-close:hover { border-color: var(--gold); color: var(--gold); }
+.modal-close:hover,
+.modal-close:active { border-color: var(--gold); color: var(--gold); }
 
 .modal-img-wrap {
   flex: 1;
@@ -989,6 +1004,10 @@ h1, h2, h3 {
   100% { opacity: 1; }
 }
 
+/* ── Deduction active banner (mobile only) ───────────── */
+
+.deduction-active-banner { display: none; }
+
 /* ── Utilities ───────────────────────────────────── */
 
 .text-muted { color: var(--text-muted); }
@@ -1005,11 +1024,67 @@ h1, h2, h3 {
   .deduction-layout { grid-template-columns: 1fr; }
   .verse-hand-grid { grid-template-columns: repeat(2, 1fr); }
   .resolution-list { grid-template-columns: 1fr; }
+
+  /* Compose: compact 3-col painting strip always visible above haiku */
+  .screen-compose .paintings-grid.large {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .screen-compose .painting-card .painting-info { display: none; }
+  .screen-compose .painting-card .painting-card-btns { display: none; }
+  .screen-compose .painting-card.selected {
+    outline: 3px solid var(--gold);
+    outline-offset: -1px;
+  }
+
+  /* Slot buttons: larger touch targets */
+  .slot-btn { width: 40px; height: 40px; }
+  .slot-controls { gap: 6px; }
+
+  /* Verse tokens: give them more height on mobile */
+  .verse-token { min-height: 52px; }
+
+  /* Deduction active banner: sticky at top when haiku is selected */
+  .deduction-active-banner {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 2px solid var(--gold);
+    padding: 10px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    margin-bottom: -4px;
+  }
+  .deduction-active-banner .dab-player {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .deduction-active-banner .dab-haiku {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
 }
 
 @media (max-width: 480px) {
-  .paintings-grid.large { grid-template-columns: 1fr; }
-  .verse-hand-grid { grid-template-columns: 1fr; }
+  /* Keep compose painting strip at 3 cols even on small phones */
+  .screen-compose .paintings-grid.large { grid-template-columns: repeat(3, 1fr); }
+  /* Keep verse hand at 2 cols (16 tokens in 1 col is too long) */
+  .verse-hand-grid { grid-template-columns: repeat(2, 1fr); }
   .compose-slot { flex-wrap: wrap; }
   .slot-controls { width: 100%; justify-content: flex-end; }
+  .timer-display { font-size: 1.6rem; min-width: 70px; }
+}
+
+/* Landscape on short screens (phones in landscape) */
+@media (max-height: 500px) {
+  .screen-cinematic { padding: 12px 20px 10px; }
+  .cin-painting-img { max-height: 45vh; }
+  .cin-artist { display: none; }
 }
