@@ -29,9 +29,20 @@ function renderAndMaybeSchedule() {
   const s = Game.getState();
   if (s && s.phase === 'turn-reveal-cinematic') {
     _cinematicTimer = setTimeout(() => {
-      Game.advanceCinematic();
-      renderAndMaybeSchedule();
-    }, 2800);
+      _cinematicTimer = null;
+      const section = document.querySelector('.screen-cinematic');
+      if (section) {
+        section.classList.add('cin-exiting');
+        _cinematicTimer = setTimeout(() => {
+          _cinematicTimer = null;
+          Game.advanceCinematic();
+          renderAndMaybeSchedule();
+        }, 500);
+      } else {
+        Game.advanceCinematic();
+        renderAndMaybeSchedule();
+      }
+    }, 5000);
   }
 }
 

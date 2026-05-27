@@ -19,16 +19,21 @@ la mission.
 **En local** : ouvrir `index.html` dans un navigateur récent (Chrome,
 Firefox, Safari, Edge). Aucune installation ni serveur requis.
 
-Les images sont désormais incluses dans le repo : le jeu fonctionne
+Les images sont incluses dans le repo : le jeu fonctionne
 **hors-ligne** après clonage.
+
+**Mobile** : le jeu est jouable sur téléphone. L'écran de composition
+affiche les 6 tableaux en grille compacte en haut (toujours visibles
+pendant la composition du haïku) et le bandeau de déduction reste
+visible lors du défilement.
 
 ## Modes
 
 | Mode | État |
 |---|---|
 | Multi-joueurs local (passe-passe l'écran) | ✅ Disponible |
-| Solo | 🔜 Jalon 3 |
-| Multi-joueurs en ligne | 🔜 Jalon 5 |
+| Solo | 🔜 À venir |
+| Multi-joueurs en ligne | 🔜 À venir |
 
 ## Règles
 
@@ -102,17 +107,9 @@ js/
   game.js         — état et logique du jeu
   ui.js           — rendu DOM
   data/
-    paintings.js  — 30 tableaux (titre, artiste, URL Wikimedia)
-    verses.js     — 16 vers poétiques (groupes A/B/C)
+    paintings.js  — ~250 tableaux (titre, artiste, URL Wikimedia)
+    verses.js     — ~310 vers poétiques (pool, 16 distribués par joueur)
 ```
-
-## Feuille de route
-
-- **Jalon 1** ✅ Fondations : données, règles, MVP multi-local
-- **Jalon 2** — Polish UI, animations, fiche pédagogique par tableau
-- **Jalon 3** — Mode solo
-- **Jalon 4** — Validation syllabique, ambiance sonore
-- **Jalon 5** — Multijoueur en ligne (WebSocket)
 
 ## Licence
 

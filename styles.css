@@ -313,7 +313,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   position: relative;
-  animation: cinReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cinReveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .cin-painting-img {
@@ -342,7 +342,7 @@ h1, h2, h3 {
 .cin-info {
   margin-top: 26px;
   text-align: center;
-  animation: cinTextUp 0.55s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cinTextUp 0.7s 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   pointer-events: none;
 }
 
@@ -368,7 +368,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: space-between;
   margin-top: 22px;
-  animation: cinTextUp 0.55s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cinTextUp 0.7s 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .cin-dots {
@@ -395,6 +395,16 @@ h1, h2, h3 {
 @keyframes cinTextUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cinExit {
+  from { opacity: 1; transform: scale(1.0); }
+  to   { opacity: 0; transform: scale(0.97); }
+}
+
+.screen-cinematic.cin-exiting {
+  animation: cinExit 0.5s ease-in forwards;
+  pointer-events: none;
 }
 
 /* ── Turn reveal ─────────────────────────────────── */
