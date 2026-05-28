@@ -1,13 +1,14 @@
-// Game state and logic.
-// All state is held in a single `state` object; mutations go through
-// the exported functions so ui.js always reads a consistent snapshot.
+// Server-side game logic — factory pattern (one instance per room).
+// Mirrors js/game.js but runs in Node.js and is instantiated per room.
 
-const Game = (() => {
+const { PAINTINGS } = require('../js/data/paintings');
+const { VERSES, VERSES_PER_PLAYER } = require('../js/data/verses');
 
-  const GALLERY_MAX  = 7;
-  const BLACKOUT_MAX = 5;
-  const HAIKU_LENGTH = 3;
+const GALLERY_MAX  = 7;
+const BLACKOUT_MAX = 5;
+const HAIKU_LENGTH = 3;
 
+function create() {
   let state = null;
 
   function shuffle(arr) {
@@ -17,49 +18,6 @@ const Game = (() => {
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  }
-
-  // ── Public API ───────────────────────────────────────
-
-  function init(playerNames) {
-    // Distribute unique 16-verse hands to each player from the pool.
-    const shuffledVerses = shuffle(VERSES.slice());
-    let cursor = 0;
-
-    const players = playerNames.map((name, id) => {
-      const hand = shuffledVerses
-        .slice(cursor, cursor + VERSES_PER_PLAYER)
-        .map(v => v.id);
-      cursor += VERSES_PER_PLAYER;
-      return { id, name, verseHand: hand };
-    });
-
-    state = {
-      phase: 'turn-reveal',
-
-      players,
-      secretIndex: 0,
-
-      paintingPool: shuffle(PAINTINGS.slice()),
-      poolOffset: 0,
-
-      turnIndex: 0,
-      turnPaintings: [],
-
-      choices: [],
-      draft: emptyDraft(),
-
-      guesses: {},
-      activeDeductionPlayer: null,
-
-      galleryProgress: 0,
-      blackoutProgress: 0,
-      lastResolution: null,
-
-      zoomedPaintingId: null,
-    };
-
-    pickTurnPaintings();
   }
 
   function emptyDraft() {
@@ -75,7 +33,36 @@ const Game = (() => {
     state.poolOffset += 6;
   }
 
-  // Turn reveal → begin secret phase for player 0
+  function init(playerNames) {
+    const shuffledVerses = shuffle(VERSES.slice());
+    let cursor = 0;
+    const players = playerNames.map((name, id) => {
+      const hand = shuffledVerses.slice(cursor, cursor + VERSES_PER_PLAYER).map(v => v.id);
+      cursor += VERSES_PER_PLAYER;
+      return { id, name, verseHand: hand };
+    });
+
+    state = {
+      phase: 'turn-reveal',
+      players,
+      secretIndex: 0,
+      paintingPool: shuffle(PAINTINGS.slice()),
+      poolOffset: 0,
+      turnIndex: 0,
+      turnPaintings: [],
+      choices: [],
+      draft: emptyDraft(),
+      guesses: {},
+      activeDeductionPlayer: null,
+      galleryProgress: 0,
+      blackoutProgress: 0,
+      lastResolution: null,
+      zoomedPaintingId: null,
+    };
+
+    pickTurnPaintings();
+  }
+
   function beginSecretPhase() {
     state.secretIndex = 0;
     state.choices     = [];
@@ -84,12 +71,9 @@ const Game = (() => {
     state.phase       = 'pass-before';
   }
 
-  // Shown after pass screen — player enters the compose phase
   function playerReady() {
     state.phase = 'secret-compose';
   }
-
-  // ── Compose actions ───────────────────────────────────
 
   function selectPainting(paintingId) {
     state.draft.paintingId = paintingId;
@@ -125,13 +109,11 @@ const Game = (() => {
   function confirmChoice() {
     if (!isDraftReady()) return;
     const d = state.draft;
-
     state.choices.push({
       playerId:   state.players[state.secretIndex].id,
       paintingId: d.paintingId,
       verses:     d.selectedVerses.slice(),
     });
-
     const isLast = state.secretIndex === state.players.length - 1;
     if (isLast) {
       state.draft = emptyDraft();
@@ -143,18 +125,6 @@ const Game = (() => {
       state.phase = 'pass-before';
     }
   }
-
-  // ── Modal (zoom) ──────────────────────────────────────
-
-  function zoomPainting(paintingId) {
-    state.zoomedPaintingId = paintingId;
-  }
-
-  function closeZoom() {
-    state.zoomedPaintingId = null;
-  }
-
-  // ── Deduction ─────────────────────────────────────────
 
   function activateDeductionPlayer(playerId) {
     state.activeDeductionPlayer = playerId;
@@ -182,20 +152,16 @@ const Game = (() => {
   function resolveRound() {
     let allCorrect = true;
     const items = state.players.map(player => {
-      const choice  = state.choices.find(c => c.playerId === player.id);
-      const guessed = state.guesses[player.id];
-      const correct = !!choice && guessed === choice.paintingId;
+      const choice        = state.choices.find(c => c.playerId === player.id);
+      const guessed       = state.guesses[player.id];
+      const correct       = !!choice && guessed === choice.paintingId;
       if (!correct) allCorrect = false;
-
-      const painting = state.turnPaintings.find(p => p.id === choice?.paintingId);
+      const painting        = state.turnPaintings.find(p => p.id === choice?.paintingId);
       const guessedPainting = state.turnPaintings.find(p => p.id === guessed);
-
       return { player, choice, painting, guessedPainting, correct };
     });
-
     if (allCorrect) state.galleryProgress++;
     else            state.blackoutProgress++;
-
     state.lastResolution = { items, allCorrect };
   }
 
@@ -206,41 +172,17 @@ const Game = (() => {
   }
 
   function nextTurn() {
-    if (checkGameOver()) {
-      state.phase = 'end';
-      return;
-    }
+    if (checkGameOver()) { state.phase = 'end'; return; }
     state.turnIndex++;
     pickTurnPaintings();
     state.phase = 'turn-reveal';
   }
 
-  // ── Accessors ────────────────────────────────────────
-
   function getState() { return state; }
-
-  function setState(s) { state = s; }
-
-  function setZoom(id) { if (state) state.zoomedPaintingId = id; }
-
-  function getConstants() {
-    return { GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };
-  }
-
-  function currentPlayer() {
-    return state.players[state.secretIndex];
-  }
-
-  function setPhase(phase) { state.phase = phase; }
 
   return {
     init,
     getState,
-    setState,
-    setZoom,
-    getConstants,
-    currentPlayer,
-    setPhase,
     beginSecretPhase,
     playerReady,
     selectPainting,
@@ -249,8 +191,6 @@ const Game = (() => {
     moveVerse,
     isDraftReady,
     confirmChoice,
-    zoomPainting,
-    closeZoom,
     activateDeductionPlayer,
     assignGuess,
     allGuessesAssigned,
@@ -258,5 +198,6 @@ const Game = (() => {
     checkGameOver,
     nextTurn,
   };
+}
 
-})();
+module.exports = { create, GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };

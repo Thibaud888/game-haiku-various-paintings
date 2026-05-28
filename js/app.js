@@ -1,19 +1,128 @@
-// Entry point. Initialises the app and handles all user interactions
-// via event delegation on #app.
+// Entry point. Routes interactions to local Game or online Socket depending on mode.
+
+let appMode   = null; // 'local' | 'online'
+let localZoom = null; // zoom state managed locally in online mode
 
 document.addEventListener('DOMContentLoaded', () => {
-  UI.renderSetup();
+  UI.renderModeSelect();
 });
 
 document.getElementById('app').addEventListener('click', e => {
   const target = e.target.closest('[data-action]');
   if (!target) return;
-
   const action = target.dataset.action;
 
+  // ── Mode selection ─────────────────────────────────
+  if (action === 'select-mode-local') {
+    appMode   = 'local';
+    localZoom = null;
+    Game.setState(null);
+    UI.renderSetup();
+    return;
+  }
+  if (action === 'select-mode-online') {
+    appMode   = 'online';
+    localZoom = null;
+    Game.setState(null);
+    UI.renderOnlineEntry();
+    return;
+  }
+
+  // ── Online pre-game ────────────────────────────────
+  if (action === 'online-create') {
+    const name = document.getElementById('online-name')?.value?.trim() || 'Joueur';
+    Socket.emit('create-room', { playerName: name });
+    return;
+  }
+  if (action === 'online-join') {
+    const code = document.getElementById('online-code')?.value?.trim().toUpperCase() || '';
+    const name = document.getElementById('online-name')?.value?.trim() || 'Joueur';
+    Socket.emit('join-room', { code, playerName: name });
+    return;
+  }
+  if (action === 'online-start') {
+    Socket.emit('start-game');
+    return;
+  }
+
+  // ── Online game ────────────────────────────────────
+  if (appMode === 'online') {
+    handleOnlineAction(action, target);
+    return;
+  }
+
+  // ── Local game ─────────────────────────────────────
+  handleLocalAction(action, target);
+});
+
+// ── Online action routing ──────────────────────────────
+
+function handleOnlineAction(action, target) {
+  // Zoom is always local (no server state)
+  if (action === 'zoom-painting') {
+    localZoom = parseInt(target.dataset.paintingId, 10);
+    Game.setZoom(localZoom);
+    UI.render();
+    return;
+  }
+  if (action === 'close-zoom') {
+    localZoom = null;
+    Game.setZoom(null);
+    UI.render();
+    return;
+  }
+  if (action === 'select-painting-from-modal') {
+    const paintingId = parseInt(target.dataset.paintingId, 10);
+    localZoom = null;
+    Game.setZoom(null);
+    Socket.emit('game-action', { action: 'select-painting', payload: { paintingId } });
+    return;
+  }
+  if (action === 'assign-from-modal') {
+    const paintingId = parseInt(target.dataset.paintingId, 10);
+    localZoom = null;
+    Game.setZoom(null);
+    Socket.emit('game-action', { action: 'assign-guess', payload: { paintingId } });
+    return;
+  }
+
+  switch (action) {
+    case 'begin-secret':
+      Socket.emit('game-action', { action: 'begin-secret', payload: {} });
+      break;
+    case 'add-verse':
+      Socket.emit('game-action', { action: 'add-verse', payload: { verseId: parseInt(target.dataset.verseId, 10) } });
+      break;
+    case 'remove-verse':
+      Socket.emit('game-action', { action: 'remove-verse', payload: { verseId: parseInt(target.dataset.verseId, 10) } });
+      break;
+    case 'move-verse':
+      Socket.emit('game-action', { action: 'move-verse', payload: { verseId: parseInt(target.dataset.verseId, 10), direction: target.dataset.dir } });
+      break;
+    case 'confirm-choice':
+      Socket.emit('game-action', { action: 'confirm-choice', payload: {} });
+      break;
+    case 'activate-deduction':
+      Socket.emit('game-action', { action: 'activate-deduction', payload: { playerId: parseInt(target.dataset.playerId, 10) } });
+      break;
+    case 'confirm-guesses':
+      Socket.emit('game-action', { action: 'confirm-guesses', payload: {} });
+      break;
+    case 'next-turn':
+      Socket.emit('game-action', { action: 'next-turn', payload: {} });
+      break;
+    case 'restart':
+      Socket.emit('game-action', { action: 'restart', payload: {} });
+      break;
+  }
+}
+
+// ── Local action routing (unchanged logic) ─────────────
+
+function handleLocalAction(action, target) {
   switch (action) {
 
-    // ── Setup ──────────────────────────────────────────
+    // ── Setup ────────────────────────────────────────
     case 'count-inc': {
       const display = document.getElementById('count-display');
       const current = parseInt(display.textContent, 10);
@@ -37,19 +146,19 @@ document.getElementById('app').addEventListener('click', e => {
       break;
     }
 
-    // ── Turn reveal ────────────────────────────────────
+    // ── Turn reveal ──────────────────────────────────
     case 'begin-secret':
       Game.beginSecretPhase();
       UI.render();
       break;
 
-    // ── Pass screen ────────────────────────────────────
+    // ── Pass screen ──────────────────────────────────
     case 'player-ready':
       Game.playerReady();
       UI.render();
       break;
 
-    // ── Painting zoom modal ────────────────────────────
+    // ── Zoom modal ───────────────────────────────────
     case 'zoom-painting': {
       const paintingId = parseInt(target.dataset.paintingId, 10);
       Game.zoomPainting(paintingId);
@@ -75,7 +184,7 @@ document.getElementById('app').addEventListener('click', e => {
       break;
     }
 
-    // ── Secret compose ─────────────────────────────────
+    // ── Secret compose ───────────────────────────────
     case 'add-verse': {
       const verseId = parseInt(target.dataset.verseId, 10);
       Game.addVerse(verseId);
@@ -100,7 +209,7 @@ document.getElementById('app').addEventListener('click', e => {
       UI.render();
       break;
 
-    // ── Deduction ──────────────────────────────────────
+    // ── Deduction ────────────────────────────────────
     case 'activate-deduction': {
       const playerId = parseInt(target.dataset.playerId, 10);
       Game.activateDeductionPlayer(playerId);
@@ -112,25 +221,30 @@ document.getElementById('app').addEventListener('click', e => {
       UI.render();
       break;
 
-    // ── Resolution ─────────────────────────────────────
+    // ── Resolution ───────────────────────────────────
     case 'next-turn':
       Game.nextTurn();
       UI.render();
       break;
 
-    // ── End ────────────────────────────────────────────
+    // ── End ──────────────────────────────────────────
     case 'restart':
-      UI.renderSetup();
+      UI.renderModeSelect();
       break;
   }
-});
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const s = Game.getState();
-    if (s && s.zoomedPaintingId !== null) {
-      Game.closeZoom();
-      UI.render();
-    }
+  if (e.key !== 'Escape') return;
+  const s = Game.getState();
+  if (!s || s.zoomedPaintingId === null) return;
+  if (appMode === 'online') {
+    localZoom = null;
+    Game.setZoom(null);
+  } else {
+    Game.closeZoom();
   }
+  UI.render();
 });

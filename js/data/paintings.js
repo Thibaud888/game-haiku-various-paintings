@@ -303,3 +303,5 @@ const PAINTINGS = PAINTINGS_DATA.map(([title, artist, year, file], id) => ({
   remoteUrl: wikiImg(file),  // fallback Wikimedia si local absent
   file,                      // nom de fichier Wikimedia (pour le script de download)
 }));
+
+if (typeof module !== 'undefined') module.exports = { PAINTINGS };

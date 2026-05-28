@@ -5,6 +5,9 @@
 scripts/download-report.json
 scripts/failures.json
 
+# Dépendances Node.js
+node_modules/
+
 # OS / éditeurs
 .DS_Store
 Thumbs.db

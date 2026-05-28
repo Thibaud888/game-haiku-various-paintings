@@ -8,14 +8,24 @@ const UI = (() => {
     const s = Game.getState();
     if (!s) { renderSetup(); return; }
 
+    const isOnline = s.myPlayerId !== undefined;
     let html = '';
+
     switch (s.phase) {
-      case 'turn-reveal':    html = htmlTurnReveal(s); break;
-      case 'pass-before':    html = htmlPassBefore(s); break;
-      case 'secret-compose': html = htmlSecretCompose(s); break;
-      case 'deduction':      html = htmlDeduction(s); break;
-      case 'resolution':     html = htmlResolution(s); break;
-      case 'end':            html = htmlEnd(s); break;
+      case 'turn-reveal':
+        html = htmlTurnReveal(s);
+        break;
+      case 'pass-before':
+        html = isOnline ? htmlOnlineWaiting(s) : htmlPassBefore(s);
+        break;
+      case 'secret-compose':
+        html = (isOnline && s.myPlayerId !== s.secretIndex)
+          ? htmlOnlineWaiting(s)
+          : htmlSecretCompose(s);
+        break;
+      case 'deduction':   html = htmlDeduction(s);  break;
+      case 'resolution':  html = htmlResolution(s); break;
+      case 'end':         html = htmlEnd(s);         break;
       default: html = '';
     }
 
@@ -108,6 +118,109 @@ const UI = (() => {
 
   function haikuLines(choice) {
     return (choice.verses || []).map(id => verseText(id));
+  }
+
+  // ── Mode select ──────────────────────────────────────
+
+  function renderModeSelect() {
+    app().innerHTML = `
+      <section class="screen-mode-select">
+        <div>
+          <h1 class="setup-title">Nuit au Musée</h1>
+          <p class="setup-subtitle">
+            Un jeu coopératif de haïkus et de tableaux célèbres.<br>
+            Rejoignez la Grande Galerie avant le black-out.
+          </p>
+        </div>
+        <div class="mode-buttons">
+          <button class="btn btn-primary btn-mode" data-action="select-mode-local">
+            Jouer en local
+            <span class="btn-mode-sub">Sur cet appareil, en passant l'écran</span>
+          </button>
+          <button class="btn btn-mode" data-action="select-mode-online">
+            Jouer en ligne
+            <span class="btn-mode-sub">Chacun sur son propre appareil</span>
+          </button>
+        </div>
+      </section>`;
+  }
+
+  // ── Online entry ─────────────────────────────────────
+
+  function renderOnlineEntry() {
+    app().innerHTML = `
+      <section class="screen-online-entry">
+        <button class="btn-back" data-action="select-mode-local" style="display:none"></button>
+        <h2 class="setup-title" style="font-size:clamp(2rem,5vw,3.5rem)">Jouer en ligne</h2>
+        <p class="setup-subtitle">Entrez votre nom, puis créez ou rejoignez une partie.</p>
+        <div class="online-entry-form">
+          <div class="online-field">
+            <label for="online-name">Votre nom</label>
+            <input id="online-name" type="text" placeholder="Alice" maxlength="20" autocomplete="off">
+          </div>
+          <div class="online-actions">
+            <button class="btn btn-primary btn-online-action" data-action="online-create">
+              Créer une partie
+            </button>
+            <div class="online-separator">ou</div>
+            <div class="online-join-row">
+              <input id="online-code" type="text" placeholder="Code ABCD" maxlength="4"
+                     autocomplete="off" style="text-transform:uppercase;letter-spacing:0.2em">
+              <button class="btn btn-online-action" data-action="online-join">Rejoindre</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-back-mode" data-action="select-mode-local">← Retour</button>
+      </section>`;
+    document.getElementById('online-name')?.focus();
+  }
+
+  // ── Lobby ─────────────────────────────────────────────
+
+  function renderLobby({ code, players, myPlayerId }) {
+    const isHost  = myPlayerId === 0;
+    const canStart = players.length >= 2;
+    app().innerHTML = `
+      <section class="screen-lobby">
+        <h2 class="setup-title" style="font-size:clamp(1.8rem,4vw,3rem)">Salle d'attente</h2>
+        <div class="lobby-code-block">
+          <div class="lobby-code-label">Code de la partie</div>
+          <div class="lobby-code-value">${escapeHtml(code)}</div>
+          <div class="lobby-code-hint">Partagez ce code avec vos amis</div>
+        </div>
+        <div class="lobby-players">
+          <div class="lobby-players-label">Joueurs (${players.length}/5)</div>
+          <ul class="lobby-player-list">
+            ${players.map((name, i) => `
+              <li class="lobby-player ${i === myPlayerId ? 'me' : ''}">
+                ${i === 0 ? '<span class="host-crown">♛</span>' : ''}
+                ${escapeHtml(name)}
+                ${i === myPlayerId ? '<span class="me-tag">(vous)</span>' : ''}
+              </li>`).join('')}
+          </ul>
+        </div>
+        ${isHost ? `
+          <button class="btn btn-primary" data-action="online-start" ${canStart ? '' : 'disabled'}>
+            Commencer la partie
+          </button>
+          ${!canStart ? `<p class="lobby-waiting-hint">En attente d'au moins un autre joueur…</p>` : ''}
+        ` : `
+          <p class="lobby-waiting-hint">En attente que l'hôte lance la partie…</p>
+        `}
+      </section>`;
+  }
+
+  // ── Toast notifications ──────────────────────────────
+
+  function showToast(message, type = 'info') {
+    const existing = document.getElementById('toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.id = 'toast';
+    el.className = `toast toast-${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
   }
 
   // ── Setup ────────────────────────────────────────────
@@ -422,6 +535,28 @@ const UI = (() => {
       </section>`;
   }
 
+  // ── Online waiting screen ────────────────────────────
+
+  function htmlOnlineWaiting(s) {
+    const composingPlayer = s.players[s.secretIndex];
+    const submittedCount  = s.choices.length;
+    const total           = s.players.length;
+    return `
+      <section class="screen-waiting">
+        ${tracksHtml(s)}
+        <div class="waiting-body">
+          <div class="waiting-icon">🎨</div>
+          <h2 class="waiting-title">Phase secrète</h2>
+          <p class="waiting-sub">
+            <strong>${escapeHtml(composingPlayer?.name ?? '…')}</strong> compose son haïku…
+          </p>
+          <p class="waiting-progress text-muted">
+            ${submittedCount} / ${total} joueur${total > 1 ? 's' : ''} ${submittedCount > 1 ? 'ont' : submittedCount === 1 ? 'a' : 'ont'} validé
+          </p>
+        </div>
+      </section>`;
+  }
+
   // ── Modal (zoom on painting) ────────────────────────
 
   function htmlZoomModal(s) {
@@ -473,6 +608,6 @@ const UI = (() => {
 
   // ── Expose ───────────────────────────────────────────
 
-  return { render, renderSetup, updatePlayerInputs };
+  return { render, renderSetup, renderModeSelect, renderOnlineEntry, renderLobby, showToast, updatePlayerInputs };
 
 })();
