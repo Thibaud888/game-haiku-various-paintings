@@ -5,9 +5,15 @@
 scripts/download-report.json
 scripts/failures.json
 
+# Dépendances Node.js
+node_modules/
+
 # OS / éditeurs
 .DS_Store
 Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Rapport généré par scripts/resolve-missing.mjs
+scripts/resolve-report.json

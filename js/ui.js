@@ -6,7 +6,7 @@ const UI = (() => {
 
   function render() {
     const s = Game.getState();
-    if (!s) { renderSetup(); return; }
+    if (!s) { renderModeSelect(); return; }
 
     let html = '';
     switch (s.phase) {
@@ -14,7 +14,9 @@ const UI = (() => {
       case 'turn-reveal-cinematic': html = htmlTurnRevealCinematic(s); break;
       case 'turn-reveal':          html = htmlTurnReveal(s); break;
       case 'pass-before':    html = htmlPassBefore(s); break;
-      case 'secret-compose': html = htmlSecretCompose(s); break;
+      case 'secret-compose':
+        html = (s.online && s.mySubmitted) ? htmlOnlineComposeWaiting(s) : htmlSecretCompose(s);
+        break;
       case 'deduction':      html = htmlDeduction(s); break;
       case 'resolution':     html = htmlResolution(s); break;
       case 'end':            html = htmlEnd(s); break;
@@ -278,6 +280,26 @@ const UI = (() => {
 
   function htmlTurnReveal(s) {
     const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.turnPrelude) : '';
+
+    // Online: every player must click "Commencer les haïkus" before the secret
+    // phase begins. Once ready, the button waits on the others.
+    let actionsHtml;
+    if (s.online) {
+      actionsHtml = s.iAmReady
+        ? `<button class="btn btn-primary" data-action="begin-secret" disabled>
+             En attente des autres joueurs… (${s.readyCount}/${s.totalPlayers})
+           </button>
+           <p class="turn-ready-hint text-muted">Vous êtes prêt(e). La phase secrète démarrera quand tout le monde aura cliqué.</p>`
+        : `<button class="btn btn-primary" data-action="begin-secret">
+             Commencer les haïkus →
+           </button>
+           <p class="turn-ready-hint text-muted">${s.readyCount}/${s.totalPlayers} joueur${s.totalPlayers > 1 ? 's' : ''} prêt${s.readyCount > 1 ? 's' : ''}</p>`;
+    } else {
+      actionsHtml = `<button class="btn btn-primary" data-action="begin-secret">
+          Commencer les haïkus →
+        </button>`;
+    }
+
     return `
       <section class="screen-turn-reveal">
         <div class="turn-header">
@@ -293,9 +315,7 @@ const UI = (() => {
           })).join('')}
         </div>
         <div class="turn-actions">
-          <button class="btn btn-primary" data-action="begin-secret">
-            Commencer les haïkus →
-          </button>
+          ${actionsHtml}
         </div>
       </section>`;
   }
@@ -424,6 +444,7 @@ const UI = (() => {
           <p class="text-muted">
             Cliquez sur l'image pour l'agrandir, puis « Choisir » pour sélectionner un tableau. Composez ensuite votre haïku en 3 vers.
           </p>
+          ${s.online ? `<p class="compose-online-progress text-muted">${s.submittedCount}/${s.totalPlayers} joueur${s.totalPlayers > 1 ? 's' : ''} ont validé — chacun compose de son côté.</p>` : ''}
         </div>
 
         <div class="paintings-grid large">
@@ -666,6 +687,191 @@ const UI = (() => {
       </div>`;
   }
 
+  // ── Online: waiting for the other composers ──────────
+
+  function htmlOnlineComposeWaiting(s) {
+    return `
+      <section class="screen-waiting">
+        ${tracksHtml(s)}
+        <div class="waiting-body">
+          <div class="waiting-icon">✓</div>
+          <h2 class="waiting-title">Haïku validé</h2>
+          <p class="waiting-sub">En attente des autres joueurs…</p>
+          <p class="waiting-progress text-muted">
+            ${s.submittedCount}/${s.totalPlayers} joueur${s.totalPlayers > 1 ? 's' : ''} ${s.submittedCount > 1 ? 'ont' : 'a'} validé
+          </p>
+        </div>
+      </section>`;
+  }
+
+  // ── Online: mode select ──────────────────────────────
+
+  function renderModeSelect() {
+    app().innerHTML = `
+      <section class="screen-mode-select">
+        <div>
+          <h1 class="setup-title">Nuit au Musée</h1>
+          <p class="setup-subtitle">
+            Un jeu coopératif de haïkus et de tableaux célèbres.<br>
+            Rejoignez la Grande Galerie avant le black-out.
+          </p>
+        </div>
+        <div class="mode-buttons">
+          <button class="btn btn-primary btn-mode" data-action="select-mode-local">
+            Jouer en local
+            <span class="btn-mode-sub">Sur cet appareil, en passant l'écran</span>
+          </button>
+          <button class="btn btn-mode" data-action="select-mode-online">
+            Jouer en ligne
+            <span class="btn-mode-sub">Chacun sur son propre appareil</span>
+          </button>
+        </div>
+      </section>`;
+  }
+
+  // ── Online: entry (name + create / join) ─────────────
+
+  function renderOnlineEntry() {
+    app().innerHTML = `
+      <section class="screen-online-entry">
+        <h2 class="setup-title" style="font-size:clamp(2rem,5vw,3.5rem)">Jouer en ligne</h2>
+        <p class="setup-subtitle">Entrez votre nom, puis créez ou rejoignez une partie.</p>
+        <div class="online-entry-form">
+          <div class="online-field">
+            <label for="online-name">Votre nom</label>
+            <input id="online-name" type="text" placeholder="Alice" maxlength="20" autocomplete="off">
+          </div>
+          <div class="online-actions">
+            <button class="btn btn-primary btn-online-action" data-action="online-create">
+              Créer une partie
+            </button>
+            <div class="online-separator">ou rejoindre avec un code</div>
+            <div class="online-field">
+              <label for="online-code">Code de la partie</label>
+              <input id="online-code" class="online-code-input" type="text"
+                     placeholder="ABCD" maxlength="4" autocomplete="off"
+                     autocapitalize="characters" spellcheck="false">
+            </div>
+            <button class="btn btn-online-action" data-action="online-join">Rejoindre</button>
+          </div>
+        </div>
+        <button class="btn btn-back-mode" data-action="back-to-mode">← Retour</button>
+      </section>`;
+    document.getElementById('online-name')?.focus();
+  }
+
+  // Reusable game-options block (host configures these in the lobby).
+  function onlineOptionsHtml(opts) {
+    const { duration, difficulty, story, timerEnabled, timerMinutes } = opts;
+    const act = (group, val) => group === val ? ' active' : '';
+    return `
+      <div class="setup-options">
+        <div class="option-group">
+          <div class="option-label">Durée de partie</div>
+          <div class="option-btns">
+            <button class="opt-btn${act(duration,'short')}" data-action="set-option" data-option="duration" data-value="short">
+              Court<span class="opt-desc">6 tableaux gagnants</span>
+            </button>
+            <button class="opt-btn${act(duration,'standard')}" data-action="set-option" data-option="duration" data-value="standard">
+              Standard<span class="opt-desc">10 tableaux gagnants</span>
+            </button>
+            <button class="opt-btn${act(duration,'long')}" data-action="set-option" data-option="duration" data-value="long">
+              Long<span class="opt-desc">15 tableaux gagnants</span>
+            </button>
+          </div>
+        </div>
+        <div class="option-group">
+          <div class="option-label">Difficulté</div>
+          <div class="option-btns">
+            <button class="opt-btn${act(difficulty,'easy')}" data-action="set-option" data-option="difficulty" data-value="easy">
+              Facile<span class="opt-desc">12 erreurs tolérées</span>
+            </button>
+            <button class="opt-btn${act(difficulty,'standard')}" data-action="set-option" data-option="difficulty" data-value="standard">
+              Standard<span class="opt-desc">8 erreurs tolérées</span>
+            </button>
+            <button class="opt-btn${act(difficulty,'hard')}" data-action="set-option" data-option="difficulty" data-value="hard">
+              Difficile<span class="opt-desc">4 erreurs tolérées</span>
+            </button>
+          </div>
+        </div>
+        <div class="option-group">
+          <div class="option-label">Mode histoire</div>
+          <div class="option-btns">
+            <button class="opt-btn${act(story,'sobre')}" data-action="set-option" data-option="story" data-value="sobre">
+              Sobre<span class="opt-desc">Texte d'origine</span>
+            </button>
+            <button class="opt-btn${act(story,'immersif')}" data-action="set-option" data-option="story" data-value="immersif">
+              Immersif<span class="opt-desc">Intro + ambiance complète</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="timer-row">
+        <label class="timer-toggle-label">
+          <input type="checkbox" id="timer-enabled" ${timerEnabled ? 'checked' : ''}
+                 onchange="document.getElementById('timer-duration-wrap').style.opacity=this.checked?'1':'0.35'">
+          <span>Chronomètre</span>
+        </label>
+        <div class="timer-duration-wrap" id="timer-duration-wrap" style="opacity:${timerEnabled ? '1' : '0.35'}">
+          <input type="number" id="timer-duration" min="1" max="30" value="${timerMinutes}"
+                 class="timer-duration-input">
+          <span class="timer-duration-unit">min par joueur</span>
+        </div>
+      </div>`;
+  }
+
+  // ── Online: lobby (host sees options + start) ────────
+
+  function renderLobby({ code, players, myPlayerId, options }) {
+    const isHost   = myPlayerId === 0;
+    const canStart = players.length >= 2;
+    app().innerHTML = `
+      <section class="screen-lobby">
+        <h2 class="setup-title" style="font-size:clamp(1.8rem,4vw,3rem)">Salle d'attente</h2>
+        <div class="lobby-code-block">
+          <div class="lobby-code-label">Code de la partie</div>
+          <div class="lobby-code-value">${escapeHtml(code)}</div>
+          <div class="lobby-code-hint">Partagez ce code avec vos amis</div>
+        </div>
+        <div class="lobby-players">
+          <div class="lobby-players-label">Joueurs (${players.length}/6)</div>
+          <ul class="lobby-player-list">
+            ${players.map((name, i) => `
+              <li class="lobby-player ${i === myPlayerId ? 'me' : ''}">
+                ${i === 0 ? '<span class="host-crown">♛</span>' : ''}
+                ${escapeHtml(name)}
+                ${i === myPlayerId ? '<span class="me-tag">(vous)</span>' : ''}
+              </li>`).join('')}
+          </ul>
+        </div>
+        ${isHost ? `
+          <div class="lobby-options">
+            <div class="lobby-options-title">Options de la partie</div>
+            ${onlineOptionsHtml(options)}
+          </div>
+          <button class="btn btn-primary" data-action="online-start" ${canStart ? '' : 'disabled'}>
+            Lancer la partie
+          </button>
+          ${!canStart ? `<p class="lobby-waiting-hint">En attente d'au moins un autre joueur…</p>` : ''}
+        ` : `
+          <p class="lobby-waiting-hint">En attente que l'hôte règle les options et lance la partie…</p>
+        `}
+      </section>`;
+  }
+
+  // ── Toast notifications ──────────────────────────────
+
+  function showToast(message, type = 'info') {
+    const existing = document.getElementById('toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.id = 'toast';
+    el.className = `toast toast-${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
   // ── Timer (in-place update, avoids full re-render) ──
 
   function updateTimer() {
@@ -682,6 +888,9 @@ const UI = (() => {
 
   // ── Expose ───────────────────────────────────────────
 
-  return { render, renderSetup, updatePlayerInputs, updateTimer };
+  return {
+    render, renderSetup, updatePlayerInputs, updateTimer,
+    renderModeSelect, renderOnlineEntry, renderLobby, showToast,
+  };
 
 })();

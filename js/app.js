@@ -1,5 +1,6 @@
-// Entry point. Initialises the app and handles all user interactions
-// via event delegation on #app.
+// Entry point. Shows the mode-select screen, then routes interactions either
+// to the local Game (pass-and-play on one device) or to the online Socket
+// controller (server-authoritative, every player on their own device).
 
 const DURATION_SETTINGS = {
   short:    { galleryMax: 6  },
@@ -12,12 +13,31 @@ const DIFFICULTY_SETTINGS = {
   hard:     { blackoutMax: 4  },
 };
 
+let appMode = null; // 'local' | 'online'
+
+// Shared option state (used by both the local setup and the online lobby).
 let _duration   = 'standard';
 let _difficulty = 'standard';
 let _story      = 'immersif';
+let _onlineTimerEnabled = false;
+let _onlineTimerMinutes = 3;
 
 let timerInterval = null;
 let _cinematicTimer = null;
+
+// Snapshot the host's currently chosen online options (persists across lobby
+// re-renders). Referenced by socket.js when (re)rendering the lobby.
+function getOnlineOptions() {
+  const cb  = document.getElementById('timer-enabled');
+  const dur = document.getElementById('timer-duration');
+  if (cb)  _onlineTimerEnabled = cb.checked;
+  if (dur) { const v = parseInt(dur.value, 10); if (Number.isFinite(v)) _onlineTimerMinutes = v; }
+  return {
+    duration: _duration, difficulty: _difficulty, story: _story,
+    timerEnabled: _onlineTimerEnabled, timerMinutes: _onlineTimerMinutes,
+  };
+}
+window.getOnlineOptions = getOnlineOptions;
 
 function stopCinematic() {
   if (_cinematicTimer !== null) { clearTimeout(_cinematicTimer); _cinematicTimer = null; }
@@ -47,10 +67,7 @@ function renderAndMaybeSchedule() {
 }
 
 function stopTimer() {
-  if (timerInterval !== null) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 }
 
 function startTimer() {
@@ -62,16 +79,150 @@ function startTimer() {
   }, 1000);
 }
 
+function resetOptions() {
+  _duration   = 'standard';
+  _difficulty = 'standard';
+  _story      = 'immersif';
+  _onlineTimerEnabled = false;
+  _onlineTimerMinutes = 3;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  UI.renderSetup();
+  UI.renderModeSelect();
 });
 
 document.getElementById('app').addEventListener('click', e => {
   const target = e.target.closest('[data-action]');
   if (!target) return;
-
   const action = target.dataset.action;
 
+  // ── Mode selection & online pre-game ───────────────
+  switch (action) {
+    case 'select-mode-local':
+      appMode = 'local';
+      stopTimer(); stopCinematic();
+      Game.setState(null);
+      resetOptions();
+      UI.renderSetup();
+      return;
+    case 'select-mode-online':
+      appMode = 'online';
+      stopTimer(); stopCinematic();
+      Socket.reset();
+      Game.setState(null);
+      resetOptions();
+      UI.renderOnlineEntry();
+      return;
+    case 'back-to-mode':
+      appMode = null;
+      Socket.reset();
+      Game.setState(null);
+      UI.renderModeSelect();
+      return;
+    case 'online-create': {
+      const name = document.getElementById('online-name')?.value?.trim() || 'Joueur';
+      Socket.emit('create-room', { playerName: name });
+      return;
+    }
+    case 'online-join': {
+      const code = document.getElementById('online-code')?.value?.trim().toUpperCase() || '';
+      const name = document.getElementById('online-name')?.value?.trim() || 'Joueur';
+      if (code.length !== 4) { UI.showToast('Entrez un code à 4 lettres.', 'error'); return; }
+      Socket.emit('join-room', { code, playerName: name });
+      return;
+    }
+    case 'online-start':
+      Socket.emit('start-game', { settings: getOnlineOptions() });
+      return;
+  }
+
+  // ── Option toggles (shared by local setup & online lobby) ──
+  if (action === 'set-option') {
+    const optionName = target.dataset.option;
+    const value      = target.dataset.value;
+    if (optionName === 'duration')   _duration   = value;
+    if (optionName === 'difficulty') _difficulty = value;
+    if (optionName === 'story')      _story      = value;
+    target.closest('.option-btns').querySelectorAll('.opt-btn')
+          .forEach(btn => btn.classList.remove('active'));
+    target.classList.add('active');
+    return;
+  }
+
+  if (appMode === 'online') {
+    handleOnlineAction(action, target, e);
+  } else {
+    handleLocalAction(action, target, e);
+  }
+});
+
+// ── Online action routing ──────────────────────────────
+
+function handleOnlineAction(action, target, e) {
+  switch (action) {
+    // Local-only reveal controls (each player plays them on their own screen)
+    case 'dismiss-intro':     Socket.dismissIntro();     return;
+    case 'advance-cinematic': Socket.advanceCinematic(); return;
+    case 'skip-cinematic':    Socket.skipCinematic();    return;
+
+    // Zoom is always local (never synced to the server)
+    case 'zoom-painting':
+      Socket.setZoom(parseInt(target.dataset.paintingId, 10));
+      return;
+    case 'close-zoom':
+      if (e.target.closest('.modal-content') && !e.target.closest('.modal-close')) return;
+      Socket.clearZoom();
+      return;
+    case 'select-painting-from-modal':
+      Socket.clearZoom();
+      Socket.emit('game-action', { action: 'select-painting', payload: { paintingId: parseInt(target.dataset.paintingId, 10) } });
+      return;
+    case 'assign-from-modal':
+      Socket.clearZoom();
+      Socket.emit('game-action', { action: 'assign-guess', payload: { paintingId: parseInt(target.dataset.paintingId, 10) } });
+      return;
+
+    // Turn-reveal "ready" gate
+    case 'begin-secret':
+      Socket.emit('game-action', { action: 'ready-compose', payload: {} });
+      return;
+
+    // Parallel compose
+    case 'select-painting':
+      Socket.emit('game-action', { action: 'select-painting', payload: { paintingId: parseInt(target.dataset.paintingId, 10) } });
+      return;
+    case 'add-verse':
+      Socket.emit('game-action', { action: 'add-verse', payload: { verseId: parseInt(target.dataset.verseId, 10) } });
+      return;
+    case 'remove-verse':
+      Socket.emit('game-action', { action: 'remove-verse', payload: { verseId: parseInt(target.dataset.verseId, 10) } });
+      return;
+    case 'move-verse':
+      Socket.emit('game-action', { action: 'move-verse', payload: { verseId: parseInt(target.dataset.verseId, 10), direction: target.dataset.dir } });
+      return;
+    case 'confirm-choice':
+      Socket.emit('game-action', { action: 'confirm-choice', payload: {} });
+      return;
+
+    // Deduction / resolution / end
+    case 'activate-deduction':
+      Socket.emit('game-action', { action: 'activate-deduction', payload: { playerId: parseInt(target.dataset.playerId, 10) } });
+      return;
+    case 'confirm-guesses':
+      Socket.emit('game-action', { action: 'confirm-guesses', payload: {} });
+      return;
+    case 'next-turn':
+      Socket.emit('game-action', { action: 'next-turn', payload: {} });
+      return;
+    case 'restart':
+      Socket.emit('game-action', { action: 'restart', payload: {} });
+      return;
+  }
+}
+
+// ── Local action routing (single-device pass-and-play) ──
+
+function handleLocalAction(action, target, e) {
   switch (action) {
 
     // ── Setup ──────────────────────────────────────────
@@ -103,18 +254,7 @@ document.getElementById('app').addEventListener('click', e => {
         storyMode: _story,
       };
       Game.init(names, settings);
-      UI.render();
-      break;
-    }
-    case 'set-option': {
-      const optionName = target.dataset.option;
-      const value      = target.dataset.value;
-      if (optionName === 'duration')   _duration   = value;
-      if (optionName === 'difficulty') _difficulty = value;
-      if (optionName === 'story')      _story      = value;
-      target.closest('.option-btns').querySelectorAll('.opt-btn')
-            .forEach(btn => btn.classList.remove('active'));
-      target.classList.add('active');
+      renderAndMaybeSchedule();
       break;
     }
 
@@ -155,8 +295,6 @@ document.getElementById('app').addEventListener('click', e => {
       break;
     }
     case 'close-zoom': {
-      // Only close when clicking the overlay background or the × button,
-      // not when clicking elsewhere inside .modal-content
       if (e.target.closest('.modal-content') && !e.target.closest('.modal-close')) break;
       Game.closeZoom();
       UI.render();
@@ -231,16 +369,33 @@ document.getElementById('app').addEventListener('click', e => {
     case 'restart':
       stopTimer();
       stopCinematic();
-      _duration   = 'standard';
-      _difficulty = 'standard';
-      _story      = 'immersif';
-      UI.renderSetup();
+      resetOptions();
+      Game.setState(null);
+      appMode = null;
+      UI.renderModeSelect();
       break;
   }
-});
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────
 
 document.addEventListener('keydown', e => {
   const s = Game.getState();
+
+  // Online reveal shortcuts
+  if (appMode === 'online' && s) {
+    if (s.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault(); Socket.dismissIntro(); return;
+    }
+    if (s.phase === 'turn-reveal-cinematic') {
+      if (e.key === 'Escape')              { e.preventDefault(); Socket.skipCinematic(); }
+      else if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); Socket.advanceCinematic(); }
+      return;
+    }
+    if (e.key === 'Escape' && s.zoomedPaintingId !== null) { Socket.clearZoom(); }
+    return;
+  }
+
   if (!s) return;
 
   if (s.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) {

@@ -1098,3 +1098,315 @@ h1, h2, h3 {
   .cin-painting-img { max-height: 45vh; }
   .cin-artist { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════
+   ONLINE MODE
+   ═══════════════════════════════════════════════════ */
+
+/* ── Mode select ─────────────────────────────────── */
+
+.screen-mode-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  text-align: center;
+  gap: 48px;
+}
+
+.mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.btn-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 28px;
+  width: 100%;
+}
+
+.btn-mode-sub {
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  opacity: 0.75;
+}
+
+/* ── Online entry ────────────────────────────────── */
+
+.screen-online-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  text-align: center;
+  gap: 32px;
+}
+
+.online-entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.online-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.online-field label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.online-field input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.online-field input:focus { border-color: var(--gold); }
+
+/* Game-code input: large, clearly legible, well-spaced */
+.online-code-input {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 2rem !important;
+  text-align: center;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold) !important;
+  padding: 14px 14px !important;
+  text-indent: 0.3em; /* compensate trailing letter-spacing so text stays centred */
+}
+
+.online-code-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+  letter-spacing: 0.3em;
+}
+
+.online-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.btn-online-action { width: 100%; }
+
+.online-separator {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.btn-back-mode {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.15s;
+}
+.btn-back-mode:hover { color: var(--text); }
+
+/* ── Lobby ───────────────────────────────────────── */
+
+.screen-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.lobby-code-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.lobby-code-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.lobby-code-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3.5rem;
+  color: var(--gold);
+  letter-spacing: 0.4em;
+  line-height: 1;
+  text-indent: 0.4em;
+}
+
+.lobby-code-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.lobby-players { text-align: left; width: 100%; max-width: 380px; }
+
+.lobby-players-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.lobby-player-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 0.95rem;
+}
+
+.lobby-player.me { border-color: var(--gold); }
+
+.host-crown { color: var(--gold); font-size: 0.85rem; }
+
+.me-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.lobby-waiting-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Host options block inside the lobby */
+.lobby-options {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lobby-options-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Turn-reveal ready gate ──────────────────────── */
+
+.turn-ready-hint {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.compose-online-progress {
+  margin-top: 6px;
+  font-size: 0.82rem;
+}
+
+/* ── Online waiting screen ───────────────────────── */
+
+.screen-waiting {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.waiting-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 40vh;
+  text-align: center;
+}
+
+.waiting-icon {
+  font-size: 3rem;
+  color: var(--gold);
+}
+
+.waiting-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  color: var(--gold);
+}
+
+.waiting-sub { font-size: 1.1rem; }
+
+.waiting-progress { font-size: 0.9rem; }
+
+/* ── Toast notifications ─────────────────────────── */
+
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-size: 0.88rem;
+  color: var(--text);
+  z-index: 9999;
+  max-width: 90vw;
+  text-align: center;
+  animation: toast-in 0.2s ease;
+}
+
+#toast.toast-error { border-color: var(--danger); color: var(--danger); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

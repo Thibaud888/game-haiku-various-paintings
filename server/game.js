@@ -1,11 +1,19 @@
-// Game state and logic.
-// All state is held in a single `state` object; mutations go through
-// the exported functions so ui.js always reads a consistent snapshot.
+// Server-side game logic — factory pattern (one instance per room).
+// Adapted from js/game.js but built for ONLINE play, where every player
+// composes in PARALLEL (each on their own screen) instead of passing one
+// shared screen around. Key differences from the local game:
+//   • a turn-reveal "ready" gate: the secret phase only starts once every
+//     player has clicked "Commencer les haïkus";
+//   • one independent draft per player during the secret phase;
+//   • the deduction stays collective (any player can drive it).
 
-const Game = (() => {
+const { PAINTINGS } = require('../js/data/paintings');
+const { VERSES, VERSES_PER_PLAYER } = require('../js/data/verses');
+const { STORY } = require('../js/data/story');
 
-  const HAIKU_LENGTH = 3;
+const HAIKU_LENGTH = 3;
 
+function create() {
   let state = null;
 
   function shuffle(arr) {
@@ -24,91 +32,6 @@ const Game = (() => {
     return 'calm';
   }
 
-  // ── Public API ───────────────────────────────────────
-
-  function init(playerNames, settings = {}) {
-    // Distribute unique 16-verse hands to each player from the pool.
-    const shuffledVerses = shuffle(VERSES.slice());
-    let cursor = 0;
-
-    const players = playerNames.map((name, id) => {
-      const hand = shuffledVerses
-        .slice(cursor, cursor + VERSES_PER_PLAYER)
-        .map(v => v.id);
-      cursor += VERSES_PER_PLAYER;
-      return { id, name, verseHand: hand };
-    });
-
-    const {
-      timerEnabled = false,
-      timerDuration = 180,
-      storyMode = 'immersif',
-    } = settings;
-
-    state = {
-      phase: 'turn-reveal',
-
-      players,
-      secretIndex: 0,
-      composeOrder: players.map(p => p.id),
-
-      galleryMax:  settings.galleryMax  ?? 10,
-      blackoutMax: settings.blackoutMax ?? 8,
-
-      paintingPool: shuffle(PAINTINGS.slice()),
-      poolOffset: 0,
-
-      turnIndex: 0,
-      turnPaintings: [],
-
-      choices: [],
-      draft: emptyDraft(),
-
-      guesses: {},
-      activeDeductionPlayer: null,
-
-      galleryProgress: 0,
-      blackoutProgress: 0,
-      lastResolution: null,
-
-      zoomedPaintingId: null,
-
-      timerEnabled,
-      timerDuration,
-      timerSecondsLeft: 0,
-
-      storyMode,
-      lastBeats: {},
-
-      cinematicIndex: 0,
-    };
-
-    pickTurnPaintings();
-
-    if (storyMode !== 'sobre') {
-      state.lastBeats.introLines  = STORY.pickIntro();
-      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
-      state.phase = 'intro';
-    }
-  }
-
-  function dismissIntro() {
-    state.cinematicIndex = 0;
-    state.phase = 'turn-reveal-cinematic';
-  }
-
-  function advanceCinematic() {
-    if (state.cinematicIndex < state.turnPaintings.length - 1) {
-      state.cinematicIndex++;
-    } else {
-      state.phase = 'turn-reveal';
-    }
-  }
-
-  function skipCinematic() {
-    state.phase = 'turn-reveal';
-  }
-
   function emptyDraft() {
     return { paintingId: null, selectedVerses: [] };
   }
@@ -122,53 +45,126 @@ const Game = (() => {
     state.poolOffset += 6;
   }
 
-  // Turn reveal → begin secret phase, rotating start player each turn
-  function beginSecretPhase() {
-    const offset = state.turnIndex % state.players.length;
-    const ids = state.players.map(p => p.id);
-    state.composeOrder = [...ids.slice(offset), ...ids.slice(0, offset)];
-    state.secretIndex = 0;
-    state.choices     = [];
-    state.guesses     = {};
-    state.draft       = emptyDraft();
-    if (state.storyMode !== 'sobre') {
-      state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
+  // ── Setup ─────────────────────────────────────────────
+
+  function init(playerNames, settings = {}) {
+    const shuffledVerses = shuffle(VERSES.slice());
+    let cursor = 0;
+    const players = playerNames.map((name, id) => {
+      const hand = shuffledVerses.slice(cursor, cursor + VERSES_PER_PLAYER).map(v => v.id);
+      cursor += VERSES_PER_PLAYER;
+      return { id, name, verseHand: hand };
+    });
+
+    const {
+      timerEnabled  = false,
+      timerDuration = 180,
+      storyMode     = 'immersif',
+    } = settings;
+
+    state = {
+      phase: 'turn-reveal',
+      players,
+
+      galleryMax:  settings.galleryMax  ?? 10,
+      blackoutMax: settings.blackoutMax ?? 8,
+
+      paintingPool: shuffle(PAINTINGS.slice()),
+      poolOffset: 0,
+
+      turnIndex: 0,
+      turnPaintings: [],
+
+      ready:     {},   // playerId -> true (turn-reveal gate)
+      drafts:    {},   // playerId -> draft  (parallel composing)
+      submitted: {},   // playerId -> true   (haiku validated)
+
+      choices: [],
+      guesses: {},
+      activeDeductionPlayer: null,
+
+      galleryProgress: 0,
+      blackoutProgress: 0,
+      lastResolution: null,
+
+      timerEnabled,
+      timerDuration,
+
+      storyMode,
+      lastBeats: {},
+    };
+
+    pickTurnPaintings();
+
+    if (storyMode !== 'sobre') {
+      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
     }
-    state.phase = 'pass-before';
   }
 
-  // Shown after pass screen — player enters the compose phase
-  function playerReady() {
-    if (state.timerEnabled) state.timerSecondsLeft = state.timerDuration;
+  // ── Turn-reveal ready gate ────────────────────────────
+
+  function allReady() {
+    return state.players.every(p => state.ready[p.id]);
+  }
+
+  // Each player clicks "Commencer les haïkus"; compose only starts once
+  // everyone is ready. Returns true if the secret phase has just begun.
+  function markReady(playerId) {
+    if (state.phase !== 'turn-reveal') return false;
+    state.ready[playerId] = true;
+    if (allReady()) {
+      beginCompose();
+      return true;
+    }
+    return false;
+  }
+
+  function beginCompose() {
+    state.drafts    = {};
+    state.submitted = {};
+    state.choices   = [];
+    state.guesses   = {};
+    state.players.forEach(p => { state.drafts[p.id] = emptyDraft(); });
     if (state.storyMode !== 'sobre') {
       state.lastBeats.composeWhisper = STORY.pick(STORY.composeWhisper);
     }
     state.phase = 'secret-compose';
   }
 
-  function tickTimer() {
-    if (state.timerSecondsLeft > 0) state.timerSecondsLeft--;
+  // ── Parallel compose actions (per player) ─────────────
+
+  function draftOf(playerId) {
+    if (!state.drafts[playerId]) state.drafts[playerId] = emptyDraft();
+    return state.drafts[playerId];
   }
 
-  // ── Compose actions ───────────────────────────────────
-
-  function selectPainting(paintingId) {
-    state.draft.paintingId = paintingId;
+  function canEdit(playerId) {
+    return state.phase === 'secret-compose' && !state.submitted[playerId];
   }
 
-  function addVerse(verseId) {
-    const d = state.draft;
+  function selectPainting(playerId, paintingId) {
+    if (!canEdit(playerId)) return;
+    draftOf(playerId).paintingId = paintingId;
+  }
+
+  function addVerse(playerId, verseId) {
+    if (!canEdit(playerId)) return;
+    const d = draftOf(playerId);
     if (d.selectedVerses.length >= HAIKU_LENGTH) return;
     if (d.selectedVerses.includes(verseId)) return;
     d.selectedVerses.push(verseId);
   }
 
-  function removeVerse(verseId) {
-    state.draft.selectedVerses = state.draft.selectedVerses.filter(v => v !== verseId);
+  function removeVerse(playerId, verseId) {
+    if (!canEdit(playerId)) return;
+    const d = draftOf(playerId);
+    d.selectedVerses = d.selectedVerses.filter(v => v !== verseId);
   }
 
-  function moveVerse(verseId, direction) {
-    const arr = state.draft.selectedVerses;
+  function moveVerse(playerId, verseId, direction) {
+    if (!canEdit(playerId)) return;
+    const arr = draftOf(playerId).selectedVerses;
     const idx = arr.indexOf(verseId);
     if (idx === -1) return;
     if (direction === 'up' && idx > 0) {
@@ -178,50 +174,36 @@ const Game = (() => {
     }
   }
 
-  function isDraftReady() {
-    const d = state.draft;
+  function isDraftReady(playerId) {
+    const d = draftOf(playerId);
     return d.paintingId !== null && d.selectedVerses.length === HAIKU_LENGTH;
   }
 
-  function confirmChoice() {
-    if (!isDraftReady()) return;
-    const d = state.draft;
-
+  function confirmChoice(playerId) {
+    if (!canEdit(playerId)) return;
+    if (!isDraftReady(playerId)) return;
+    const d = draftOf(playerId);
     state.choices.push({
-      playerId:   state.composeOrder[state.secretIndex],
+      playerId,
       paintingId: d.paintingId,
       verses:     d.selectedVerses.slice(),
     });
+    state.submitted[playerId] = true;
 
-    const isLast = state.secretIndex === state.composeOrder.length - 1;
-    if (isLast) {
-      state.draft = emptyDraft();
+    if (state.players.every(p => state.submitted[p.id])) {
       if (state.storyMode !== 'sobre') {
         state.lastBeats.deductionTension = STORY.pick(STORY.deductionTension);
       }
       state.phase = 'deduction';
       state.activeDeductionPlayer = state.players[0].id;
-    } else {
-      state.secretIndex++;
-      state.draft = emptyDraft();
-      if (state.storyMode !== 'sobre') {
-        state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
-      }
-      state.phase = 'pass-before';
     }
   }
 
-  // ── Modal (zoom) ──────────────────────────────────────
-
-  function zoomPainting(paintingId) {
-    state.zoomedPaintingId = paintingId;
+  function submittedCount() {
+    return state.players.filter(p => state.submitted[p.id]).length;
   }
 
-  function closeZoom() {
-    state.zoomedPaintingId = null;
-  }
-
-  // ── Deduction ─────────────────────────────────────────
+  // ── Deduction (collective) ────────────────────────────
 
   function activateDeductionPlayer(playerId) {
     state.activeDeductionPlayer = playerId;
@@ -288,61 +270,37 @@ const Game = (() => {
     }
     state.turnIndex++;
     pickTurnPaintings();
+    state.ready     = {};
+    state.drafts    = {};
+    state.submitted = {};
+    state.choices   = [];
+    state.guesses   = {};
+    state.activeDeductionPlayer = null;
     if (state.storyMode !== 'sobre') {
       state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
-      state.cinematicIndex = 0;
-      state.phase = 'turn-reveal-cinematic';
-    } else {
-      state.phase = 'turn-reveal';
     }
+    state.phase = 'turn-reveal';
   }
-
-  // ── Accessors ────────────────────────────────────────
 
   function getState() { return state; }
 
-  // Online mode injects the authoritative server state here.
-  function setState(s) { state = s; }
-  function setZoom(id) { if (state) state.zoomedPaintingId = id; }
-
-  function getConstants() {
-    return {
-      GALLERY_MAX:  state ? state.galleryMax  : 10,
-      BLACKOUT_MAX: state ? state.blackoutMax : 8,
-      HAIKU_LENGTH,
-      VERSES_PER_PLAYER,
-    };
+  function readyCount() {
+    return state.players.filter(p => state.ready[p.id]).length;
   }
-
-  function currentPlayer() {
-    const playerId = state.composeOrder[state.secretIndex];
-    return state.players.find(p => p.id === playerId);
-  }
-
-  function setPhase(phase) { state.phase = phase; }
 
   return {
     init,
     getState,
-    setState,
-    setZoom,
-    getConstants,
-    currentPlayer,
-    setPhase,
-    beginSecretPhase,
-    playerReady,
-    dismissIntro,
-    advanceCinematic,
-    skipCinematic,
-    tickTimer,
+    markReady,
+    allReady,
+    readyCount,
     selectPainting,
     addVerse,
     removeVerse,
     moveVerse,
     isDraftReady,
     confirmChoice,
-    zoomPainting,
-    closeZoom,
+    submittedCount,
     activateDeductionPlayer,
     assignGuess,
     allGuessesAssigned,
@@ -350,5 +308,6 @@ const Game = (() => {
     checkGameOver,
     nextTurn,
   };
+}
 
-})();
+module.exports = { create, HAIKU_LENGTH, VERSES_PER_PLAYER };
