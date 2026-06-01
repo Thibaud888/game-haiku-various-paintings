@@ -4,8 +4,6 @@
 
 const Game = (() => {
 
-  const GALLERY_MAX  = 7;
-  const BLACKOUT_MAX = 5;
   const HAIKU_LENGTH = 3;
 
   let state = null;
@@ -19,9 +17,16 @@ const Game = (() => {
     return a;
   }
 
+  function turnMood() {
+    const ratio = state.blackoutProgress / state.blackoutMax;
+    if (ratio >= 0.5) return 'dire';
+    if (state.blackoutProgress > state.galleryProgress) return 'tense';
+    return 'calm';
+  }
+
   // ── Public API ───────────────────────────────────────
 
-  function init(playerNames) {
+  function init(playerNames, settings = {}) {
     // Distribute unique 16-verse hands to each player from the pool.
     const shuffledVerses = shuffle(VERSES.slice());
     let cursor = 0;
@@ -34,11 +39,21 @@ const Game = (() => {
       return { id, name, verseHand: hand };
     });
 
+    const {
+      timerEnabled = false,
+      timerDuration = 180,
+      storyMode = 'immersif',
+    } = settings;
+
     state = {
       phase: 'turn-reveal',
 
       players,
       secretIndex: 0,
+      composeOrder: players.map(p => p.id),
+
+      galleryMax:  settings.galleryMax  ?? 10,
+      blackoutMax: settings.blackoutMax ?? 8,
 
       paintingPool: shuffle(PAINTINGS.slice()),
       poolOffset: 0,
@@ -57,9 +72,41 @@ const Game = (() => {
       lastResolution: null,
 
       zoomedPaintingId: null,
+
+      timerEnabled,
+      timerDuration,
+      timerSecondsLeft: 0,
+
+      storyMode,
+      lastBeats: {},
+
+      cinematicIndex: 0,
     };
 
     pickTurnPaintings();
+
+    if (storyMode !== 'sobre') {
+      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+      state.phase = 'intro';
+    }
+  }
+
+  function dismissIntro() {
+    state.cinematicIndex = 0;
+    state.phase = 'turn-reveal-cinematic';
+  }
+
+  function advanceCinematic() {
+    if (state.cinematicIndex < state.turnPaintings.length - 1) {
+      state.cinematicIndex++;
+    } else {
+      state.phase = 'turn-reveal';
+    }
+  }
+
+  function skipCinematic() {
+    state.phase = 'turn-reveal';
   }
 
   function emptyDraft() {
@@ -75,18 +122,32 @@ const Game = (() => {
     state.poolOffset += 6;
   }
 
-  // Turn reveal → begin secret phase for player 0
+  // Turn reveal → begin secret phase, rotating start player each turn
   function beginSecretPhase() {
+    const offset = state.turnIndex % state.players.length;
+    const ids = state.players.map(p => p.id);
+    state.composeOrder = [...ids.slice(offset), ...ids.slice(0, offset)];
     state.secretIndex = 0;
     state.choices     = [];
     state.guesses     = {};
     state.draft       = emptyDraft();
-    state.phase       = 'pass-before';
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
+    }
+    state.phase = 'pass-before';
   }
 
   // Shown after pass screen — player enters the compose phase
   function playerReady() {
+    if (state.timerEnabled) state.timerSecondsLeft = state.timerDuration;
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.composeWhisper = STORY.pick(STORY.composeWhisper);
+    }
     state.phase = 'secret-compose';
+  }
+
+  function tickTimer() {
+    if (state.timerSecondsLeft > 0) state.timerSecondsLeft--;
   }
 
   // ── Compose actions ───────────────────────────────────
@@ -127,19 +188,25 @@ const Game = (() => {
     const d = state.draft;
 
     state.choices.push({
-      playerId:   state.players[state.secretIndex].id,
+      playerId:   state.composeOrder[state.secretIndex],
       paintingId: d.paintingId,
       verses:     d.selectedVerses.slice(),
     });
 
-    const isLast = state.secretIndex === state.players.length - 1;
+    const isLast = state.secretIndex === state.composeOrder.length - 1;
     if (isLast) {
       state.draft = emptyDraft();
+      if (state.storyMode !== 'sobre') {
+        state.lastBeats.deductionTension = STORY.pick(STORY.deductionTension);
+      }
       state.phase = 'deduction';
       state.activeDeductionPlayer = state.players[0].id;
     } else {
       state.secretIndex++;
       state.draft = emptyDraft();
+      if (state.storyMode !== 'sobre') {
+        state.lastBeats.passWhisper = STORY.pick(STORY.passWhisper);
+      }
       state.phase = 'pass-before';
     }
   }
@@ -176,59 +243,80 @@ const Game = (() => {
   function confirmGuesses() {
     if (!allGuessesAssigned()) return;
     resolveRound();
+    if (state.storyMode !== 'sobre') {
+      const pool = state.lastResolution.allCorrect
+        ? STORY.resolutionSuccess : STORY.resolutionFailure;
+      state.lastBeats.resolutionBeat = STORY.pick(pool);
+    }
     state.phase = 'resolution';
   }
 
   function resolveRound() {
-    let allCorrect = true;
     const items = state.players.map(player => {
       const choice  = state.choices.find(c => c.playerId === player.id);
       const guessed = state.guesses[player.id];
       const correct = !!choice && guessed === choice.paintingId;
-      if (!correct) allCorrect = false;
 
-      const painting = state.turnPaintings.find(p => p.id === choice?.paintingId);
+      const painting        = state.turnPaintings.find(p => p.id === choice?.paintingId);
       const guessedPainting = state.turnPaintings.find(p => p.id === guessed);
 
       return { player, choice, painting, guessedPainting, correct };
     });
 
-    if (allCorrect) state.galleryProgress++;
-    else            state.blackoutProgress++;
+    const correctCount = items.filter(i => i.correct).length;
+    state.galleryProgress  += correctCount;
+    state.blackoutProgress += (items.length - correctCount);
 
-    state.lastResolution = { items, allCorrect };
+    state.lastResolution = { items, allCorrect: correctCount === items.length, correctCount };
   }
 
   function checkGameOver() {
-    if (state.galleryProgress  >= GALLERY_MAX)  return 'win';
-    if (state.blackoutProgress >= BLACKOUT_MAX) return 'lose';
+    if (state.galleryProgress  >= state.galleryMax)  return 'win';
+    if (state.blackoutProgress >= state.blackoutMax) return 'lose';
     return null;
   }
 
   function nextTurn() {
     if (checkGameOver()) {
+      if (state.storyMode !== 'sobre') {
+        const pool = state.galleryProgress >= state.galleryMax
+          ? STORY.endingWin : STORY.endingLose;
+        state.lastBeats.endingEpilogue = STORY.pick(pool);
+      }
       state.phase = 'end';
       return;
     }
     state.turnIndex++;
     pickTurnPaintings();
-    state.phase = 'turn-reveal';
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+      state.cinematicIndex = 0;
+      state.phase = 'turn-reveal-cinematic';
+    } else {
+      state.phase = 'turn-reveal';
+    }
   }
 
   // ── Accessors ────────────────────────────────────────
 
   function getState() { return state; }
 
+  // Online mode injects the authoritative server state here.
   function setState(s) { state = s; }
-
   function setZoom(id) { if (state) state.zoomedPaintingId = id; }
 
   function getConstants() {
-    return { GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };
+    return {
+      GALLERY_MAX:  state ? state.galleryMax  : 10,
+      BLACKOUT_MAX: state ? state.blackoutMax : 8,
+      HAIKU_LENGTH,
+      VERSES_PER_PLAYER,
+    };
   }
 
   function currentPlayer() {
-    return state.players[state.secretIndex];
+    const playerId = state.composeOrder[state.secretIndex];
+    return state.players.find(p => p.id === playerId);
   }
 
   function setPhase(phase) { state.phase = phase; }
@@ -243,6 +331,10 @@ const Game = (() => {
     setPhase,
     beginSecretPhase,
     playerReady,
+    dismissIntro,
+    advanceCinematic,
+    skipCinematic,
+    tickTimer,
     selectPainting,
     addVerse,
     removeVerse,

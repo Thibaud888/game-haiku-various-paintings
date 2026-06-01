@@ -22,6 +22,7 @@ function createRoom(socketId, playerName) {
     hostSocketId: socketId,
     started: false,
     emptyAt: null,
+    settings: null,
     game: createGame(),
     players: [{
       id: 0,
@@ -40,7 +41,7 @@ function joinRoom(code, socketId, playerName) {
   const room = rooms.get(code.toUpperCase());
   if (!room)            return { ok: false, error: 'Code de partie invalide.' };
   if (room.started)     return { ok: false, error: 'La partie a déjà commencé.' };
-  if (room.players.length >= 5) return { ok: false, error: 'La partie est complète (5 joueurs max).' };
+  if (room.players.length >= 6) return { ok: false, error: 'La partie est complète (6 joueurs max).' };
 
   const playerId = room.players.length;
   room.players.push({ id: playerId, name: playerName, socketId, connected: true, disconnectedAt: null });

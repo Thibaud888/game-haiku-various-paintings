@@ -1,11 +1,16 @@
 // Server-side game logic — factory pattern (one instance per room).
-// Mirrors js/game.js but runs in Node.js and is instantiated per room.
+// Adapted from js/game.js but built for ONLINE play, where every player
+// composes in PARALLEL (each on their own screen) instead of passing one
+// shared screen around. Key differences from the local game:
+//   • a turn-reveal "ready" gate: the secret phase only starts once every
+//     player has clicked "Commencer les haïkus";
+//   • one independent draft per player during the secret phase;
+//   • the deduction stays collective (any player can drive it).
 
 const { PAINTINGS } = require('../js/data/paintings');
 const { VERSES, VERSES_PER_PLAYER } = require('../js/data/verses');
+const { STORY } = require('../js/data/story');
 
-const GALLERY_MAX  = 7;
-const BLACKOUT_MAX = 5;
 const HAIKU_LENGTH = 3;
 
 function create() {
@@ -18,6 +23,13 @@ function create() {
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+  }
+
+  function turnMood() {
+    const ratio = state.blackoutProgress / state.blackoutMax;
+    if (ratio >= 0.5) return 'dire';
+    if (state.blackoutProgress > state.galleryProgress) return 'tense';
+    return 'calm';
   }
 
   function emptyDraft() {
@@ -33,7 +45,9 @@ function create() {
     state.poolOffset += 6;
   }
 
-  function init(playerNames) {
+  // ── Setup ─────────────────────────────────────────────
+
+  function init(playerNames, settings = {}) {
     const shuffledVerses = shuffle(VERSES.slice());
     let cursor = 0;
     const players = playerNames.map((name, id) => {
@@ -42,56 +56,115 @@ function create() {
       return { id, name, verseHand: hand };
     });
 
+    const {
+      timerEnabled  = false,
+      timerDuration = 180,
+      storyMode     = 'immersif',
+    } = settings;
+
     state = {
       phase: 'turn-reveal',
       players,
-      secretIndex: 0,
+
+      galleryMax:  settings.galleryMax  ?? 10,
+      blackoutMax: settings.blackoutMax ?? 8,
+
       paintingPool: shuffle(PAINTINGS.slice()),
       poolOffset: 0,
+
       turnIndex: 0,
       turnPaintings: [],
+
+      ready:     {},   // playerId -> true (turn-reveal gate)
+      drafts:    {},   // playerId -> draft  (parallel composing)
+      submitted: {},   // playerId -> true   (haiku validated)
+
       choices: [],
-      draft: emptyDraft(),
       guesses: {},
       activeDeductionPlayer: null,
+
       galleryProgress: 0,
       blackoutProgress: 0,
       lastResolution: null,
-      zoomedPaintingId: null,
+
+      timerEnabled,
+      timerDuration,
+
+      storyMode,
+      lastBeats: {},
     };
 
     pickTurnPaintings();
+
+    if (storyMode !== 'sobre') {
+      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+    }
   }
 
-  function beginSecretPhase() {
-    state.secretIndex = 0;
-    state.choices     = [];
-    state.guesses     = {};
-    state.draft       = emptyDraft();
-    state.phase       = 'pass-before';
+  // ── Turn-reveal ready gate ────────────────────────────
+
+  function allReady() {
+    return state.players.every(p => state.ready[p.id]);
   }
 
-  function playerReady() {
+  // Each player clicks "Commencer les haïkus"; compose only starts once
+  // everyone is ready. Returns true if the secret phase has just begun.
+  function markReady(playerId) {
+    if (state.phase !== 'turn-reveal') return false;
+    state.ready[playerId] = true;
+    if (allReady()) {
+      beginCompose();
+      return true;
+    }
+    return false;
+  }
+
+  function beginCompose() {
+    state.drafts    = {};
+    state.submitted = {};
+    state.choices   = [];
+    state.guesses   = {};
+    state.players.forEach(p => { state.drafts[p.id] = emptyDraft(); });
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.composeWhisper = STORY.pick(STORY.composeWhisper);
+    }
     state.phase = 'secret-compose';
   }
 
-  function selectPainting(paintingId) {
-    state.draft.paintingId = paintingId;
+  // ── Parallel compose actions (per player) ─────────────
+
+  function draftOf(playerId) {
+    if (!state.drafts[playerId]) state.drafts[playerId] = emptyDraft();
+    return state.drafts[playerId];
   }
 
-  function addVerse(verseId) {
-    const d = state.draft;
+  function canEdit(playerId) {
+    return state.phase === 'secret-compose' && !state.submitted[playerId];
+  }
+
+  function selectPainting(playerId, paintingId) {
+    if (!canEdit(playerId)) return;
+    draftOf(playerId).paintingId = paintingId;
+  }
+
+  function addVerse(playerId, verseId) {
+    if (!canEdit(playerId)) return;
+    const d = draftOf(playerId);
     if (d.selectedVerses.length >= HAIKU_LENGTH) return;
     if (d.selectedVerses.includes(verseId)) return;
     d.selectedVerses.push(verseId);
   }
 
-  function removeVerse(verseId) {
-    state.draft.selectedVerses = state.draft.selectedVerses.filter(v => v !== verseId);
+  function removeVerse(playerId, verseId) {
+    if (!canEdit(playerId)) return;
+    const d = draftOf(playerId);
+    d.selectedVerses = d.selectedVerses.filter(v => v !== verseId);
   }
 
-  function moveVerse(verseId, direction) {
-    const arr = state.draft.selectedVerses;
+  function moveVerse(playerId, verseId, direction) {
+    if (!canEdit(playerId)) return;
+    const arr = draftOf(playerId).selectedVerses;
     const idx = arr.indexOf(verseId);
     if (idx === -1) return;
     if (direction === 'up' && idx > 0) {
@@ -101,30 +174,36 @@ function create() {
     }
   }
 
-  function isDraftReady() {
-    const d = state.draft;
+  function isDraftReady(playerId) {
+    const d = draftOf(playerId);
     return d.paintingId !== null && d.selectedVerses.length === HAIKU_LENGTH;
   }
 
-  function confirmChoice() {
-    if (!isDraftReady()) return;
-    const d = state.draft;
+  function confirmChoice(playerId) {
+    if (!canEdit(playerId)) return;
+    if (!isDraftReady(playerId)) return;
+    const d = draftOf(playerId);
     state.choices.push({
-      playerId:   state.players[state.secretIndex].id,
+      playerId,
       paintingId: d.paintingId,
       verses:     d.selectedVerses.slice(),
     });
-    const isLast = state.secretIndex === state.players.length - 1;
-    if (isLast) {
-      state.draft = emptyDraft();
+    state.submitted[playerId] = true;
+
+    if (state.players.every(p => state.submitted[p.id])) {
+      if (state.storyMode !== 'sobre') {
+        state.lastBeats.deductionTension = STORY.pick(STORY.deductionTension);
+      }
       state.phase = 'deduction';
       state.activeDeductionPlayer = state.players[0].id;
-    } else {
-      state.secretIndex++;
-      state.draft = emptyDraft();
-      state.phase = 'pass-before';
     }
   }
+
+  function submittedCount() {
+    return state.players.filter(p => state.submitted[p.id]).length;
+  }
+
+  // ── Deduction (collective) ────────────────────────────
 
   function activateDeductionPlayer(playerId) {
     state.activeDeductionPlayer = playerId;
@@ -146,51 +225,82 @@ function create() {
   function confirmGuesses() {
     if (!allGuessesAssigned()) return;
     resolveRound();
+    if (state.storyMode !== 'sobre') {
+      const pool = state.lastResolution.allCorrect
+        ? STORY.resolutionSuccess : STORY.resolutionFailure;
+      state.lastBeats.resolutionBeat = STORY.pick(pool);
+    }
     state.phase = 'resolution';
   }
 
   function resolveRound() {
-    let allCorrect = true;
     const items = state.players.map(player => {
-      const choice        = state.choices.find(c => c.playerId === player.id);
-      const guessed       = state.guesses[player.id];
-      const correct       = !!choice && guessed === choice.paintingId;
-      if (!correct) allCorrect = false;
+      const choice  = state.choices.find(c => c.playerId === player.id);
+      const guessed = state.guesses[player.id];
+      const correct = !!choice && guessed === choice.paintingId;
+
       const painting        = state.turnPaintings.find(p => p.id === choice?.paintingId);
       const guessedPainting = state.turnPaintings.find(p => p.id === guessed);
+
       return { player, choice, painting, guessedPainting, correct };
     });
-    if (allCorrect) state.galleryProgress++;
-    else            state.blackoutProgress++;
-    state.lastResolution = { items, allCorrect };
+
+    const correctCount = items.filter(i => i.correct).length;
+    state.galleryProgress  += correctCount;
+    state.blackoutProgress += (items.length - correctCount);
+
+    state.lastResolution = { items, allCorrect: correctCount === items.length, correctCount };
   }
 
   function checkGameOver() {
-    if (state.galleryProgress  >= GALLERY_MAX)  return 'win';
-    if (state.blackoutProgress >= BLACKOUT_MAX) return 'lose';
+    if (state.galleryProgress  >= state.galleryMax)  return 'win';
+    if (state.blackoutProgress >= state.blackoutMax) return 'lose';
     return null;
   }
 
   function nextTurn() {
-    if (checkGameOver()) { state.phase = 'end'; return; }
+    if (checkGameOver()) {
+      if (state.storyMode !== 'sobre') {
+        const pool = state.galleryProgress >= state.galleryMax
+          ? STORY.endingWin : STORY.endingLose;
+        state.lastBeats.endingEpilogue = STORY.pick(pool);
+      }
+      state.phase = 'end';
+      return;
+    }
     state.turnIndex++;
     pickTurnPaintings();
+    state.ready     = {};
+    state.drafts    = {};
+    state.submitted = {};
+    state.choices   = [];
+    state.guesses   = {};
+    state.activeDeductionPlayer = null;
+    if (state.storyMode !== 'sobre') {
+      state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
+    }
     state.phase = 'turn-reveal';
   }
 
   function getState() { return state; }
 
+  function readyCount() {
+    return state.players.filter(p => state.ready[p.id]).length;
+  }
+
   return {
     init,
     getState,
-    beginSecretPhase,
-    playerReady,
+    markReady,
+    allReady,
+    readyCount,
     selectPainting,
     addVerse,
     removeVerse,
     moveVerse,
     isDraftReady,
     confirmChoice,
+    submittedCount,
     activateDeductionPlayer,
     assignGuess,
     allGuessesAssigned,
@@ -200,4 +310,4 @@ function create() {
   };
 }
 
-module.exports = { create, GALLERY_MAX, BLACKOUT_MAX, HAIKU_LENGTH, VERSES_PER_PLAYER };
+module.exports = { create, HAIKU_LENGTH, VERSES_PER_PLAYER };

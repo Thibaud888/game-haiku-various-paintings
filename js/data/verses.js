@@ -337,4 +337,4 @@ const VERSES = [
 
 const VERSES_PER_PLAYER = 16;
 
-if (typeof module !== 'undefined') module.exports = { VERSES, VERSES_PER_PLAYER };
+if (typeof module !== "undefined") module.exports = { VERSES, VERSES_PER_PLAYER };
