@@ -6,23 +6,45 @@ const STORY = (() => {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  const introSequences = [
-    [
-      'Le musée s\'éteint, salle après salle.',
-      'Seuls les tableaux murmurent dans le noir.',
-      'Rejoignez la Grande Galerie avant le black-out.',
-    ],
-    [
-      'Un craquement. Puis le silence des salles vides.',
-      'Vos lampes sont épuisées. Seule la mémoire guide.',
-      'La Grande Galerie est là, quelque part dans le noir.',
-    ],
-    [
-      'L\'horloge du musée s\'est arrêtée.',
-      'Les tableaux veillent dans l\'ombre des couloirs.',
-      'Le temps presse. La Grande Galerie vous attend.',
-    ],
+  // Intro composée : on tire une ligne dans chaque pool. Toutes les
+  // combinaisons restent cohérentes (ouverture nocturne → ambiance des salles
+  // → objectif Grande Galerie / black-out), pour des centaines d'intros.
+  const introOpenings = [
+    'Le musée s\'éteint, salle après salle.',
+    'La dernière visiteuse est partie depuis longtemps.',
+    'L\'horloge du musée s\'est arrêtée à minuit.',
+    'Un craquement, puis le silence des salles vides.',
+    'Les portes se sont refermées sur la nuit.',
+    'Dehors, la ville dort ; ici, l\'obscurité gagne.',
+    'Le gardien a éteint la dernière lampe du hall.',
+    'La nuit s\'installe entre les colonnes de marbre.',
   ];
+
+  const introMiddles = [
+    'Seuls les tableaux murmurent dans le noir.',
+    'Les cadres dorés luisent faiblement dans l\'ombre.',
+    'Vos lampes faiblissent — seule la mémoire vous guide.',
+    'Les œuvres veillent, immobiles, le long des couloirs.',
+    'Chaque pas résonne sous les hauts plafonds déserts.',
+    'Les visages peints semblent suivre votre passage.',
+    'Une odeur de vernis et de poussière flotte encore.',
+    'Les ombres s\'allongent entre les chevalets oubliés.',
+  ];
+
+  const introClosings = [
+    'Rejoignez la Grande Galerie avant le black-out.',
+    'La Grande Galerie vous attend, quelque part dans le noir.',
+    'Le temps presse : trouvez la Grande Galerie.',
+    'Vos haïkus seront votre seule lumière jusqu\'à l\'aube.',
+    'Tenez l\'obscurité à distance, tableau après tableau.',
+    'Gagnez la Grande Galerie avant que tout ne s\'éteigne.',
+    'Que vos vers éclairent le chemin jusqu\'à la galerie.',
+    'Survivez à la nuit ; la Grande Galerie est l\'issue.',
+  ];
+
+  function buildIntro() {
+    return [pick(introOpenings), pick(introMiddles), pick(introClosings)];
+  }
 
   const turnPrelude = {
     calm: [
@@ -91,7 +113,9 @@ const STORY = (() => {
   ];
 
   return {
-    introSequences,
+    introOpenings,
+    introMiddles,
+    introClosings,
     turnPrelude,
     passWhisper,
     composeWhisper,
@@ -101,7 +125,8 @@ const STORY = (() => {
     endingWin,
     endingLose,
     pick,
-    pickIntro: () => pick(introSequences),
+    buildIntro,
+    pickIntro: buildIntro, // compat
   };
 
 })();

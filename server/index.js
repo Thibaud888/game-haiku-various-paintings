@@ -12,8 +12,16 @@ const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
 
-// Serve static files from project root
-app.use(express.static(path.join(__dirname, '..')));
+// Serve static files from project root. Strong caching on assets (notably the
+// 248 local paintings) so the browser reuses them instead of revalidating on
+// every render — avoids the painting flicker during composition.
+app.use(express.static(path.join(__dirname, '..'), {
+  maxAge: '7d',
+  setHeaders(res, filePath) {
+    // HTML and the game scripts must stay fresh so deploys are picked up.
+    if (/\.(html|js|css)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 
 // ── Settings sanitising ──────────────────────────────────
 
@@ -136,9 +144,10 @@ function handleGameAction(room, player, action, payload) {
       if (state.phase !== 'deduction') return;
       game.assignGuess(Number(payload.paintingId));
       break;
-    case 'confirm-guesses':
+    // Reveal gate: every player must click before the round resolves.
+    case 'request-reveal':
       if (state.phase !== 'deduction') return;
-      game.confirmGuesses();
+      game.requestReveal(pid);
       break;
 
     case 'next-turn':
@@ -215,6 +224,8 @@ function playerView(room, myId) {
     choices,
     guesses:                state.guesses,
     activeDeductionPlayer:  state.activeDeductionPlayer,
+    revealVoteCount:        room.game.revealVoteCount(),
+    iVotedReveal:           !!state.revealVotes[myId],
     lastResolution,
 
     // Story / timer

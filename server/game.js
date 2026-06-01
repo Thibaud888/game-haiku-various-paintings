@@ -82,6 +82,7 @@ function create() {
       choices: [],
       guesses: {},
       activeDeductionPlayer: null,
+      revealVotes: {},   // playerId -> true (deduction → resolution gate)
 
       galleryProgress: 0,
       blackoutProgress: 0,
@@ -97,7 +98,7 @@ function create() {
     pickTurnPaintings();
 
     if (storyMode !== 'sobre') {
-      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.introLines  = STORY.buildIntro();
       state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
     }
   }
@@ -121,10 +122,11 @@ function create() {
   }
 
   function beginCompose() {
-    state.drafts    = {};
-    state.submitted = {};
-    state.choices   = [];
-    state.guesses   = {};
+    state.drafts      = {};
+    state.submitted   = {};
+    state.choices     = [];
+    state.guesses     = {};
+    state.revealVotes = {};
     state.players.forEach(p => { state.drafts[p.id] = emptyDraft(); });
     if (state.storyMode !== 'sobre') {
       state.lastBeats.composeWhisper = STORY.pick(STORY.composeWhisper);
@@ -212,6 +214,8 @@ function create() {
   function assignGuess(paintingId) {
     if (state.activeDeductionPlayer === null) return;
     state.guesses[state.activeDeductionPlayer] = paintingId;
+    // Changing an assignment cancels any pending "reveal" votes.
+    state.revealVotes = {};
     const unassigned = state.players.find(
       p => state.guesses[p.id] === undefined && p.id !== state.activeDeductionPlayer
     );
@@ -220,6 +224,22 @@ function create() {
 
   function allGuessesAssigned() {
     return state.players.every(p => state.guesses[p.id] !== undefined);
+  }
+
+  // Online gate: every player must click "Révéler les réponses" before the
+  // round resolves. Returns true when the resolution has just happened.
+  function requestReveal(playerId) {
+    if (state.phase !== 'deduction' || !allGuessesAssigned()) return false;
+    state.revealVotes[playerId] = true;
+    if (state.players.every(p => state.revealVotes[p.id])) {
+      confirmGuesses();
+      return true;
+    }
+    return false;
+  }
+
+  function revealVoteCount() {
+    return state.players.filter(p => state.revealVotes[p.id]).length;
   }
 
   function confirmGuesses() {
@@ -270,11 +290,12 @@ function create() {
     }
     state.turnIndex++;
     pickTurnPaintings();
-    state.ready     = {};
-    state.drafts    = {};
-    state.submitted = {};
-    state.choices   = [];
-    state.guesses   = {};
+    state.ready       = {};
+    state.drafts      = {};
+    state.submitted   = {};
+    state.choices     = [];
+    state.guesses     = {};
+    state.revealVotes = {};
     state.activeDeductionPlayer = null;
     if (state.storyMode !== 'sobre') {
       state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
@@ -304,6 +325,8 @@ function create() {
     activateDeductionPlayer,
     assignGuess,
     allGuessesAssigned,
+    requestReveal,
+    revealVoteCount,
     confirmGuesses,
     checkGameOver,
     nextTurn,

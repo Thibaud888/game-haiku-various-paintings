@@ -86,7 +86,7 @@ const Game = (() => {
     pickTurnPaintings();
 
     if (storyMode !== 'sobre') {
-      state.lastBeats.introLines  = STORY.pickIntro();
+      state.lastBeats.introLines  = STORY.buildIntro();
       state.lastBeats.turnPrelude = STORY.pick(STORY.turnPrelude[turnMood()]);
       state.phase = 'intro';
     }

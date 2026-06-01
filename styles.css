@@ -1410,3 +1410,96 @@ h1, h2, h3 {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════
+   FEEDBACK ROUND — gate, reveal fade, deduction colors,
+   sequential resolution
+   ═══════════════════════════════════════════════════ */
+
+/* ── Online pre-reveal gate (point 1) ────────────── */
+
+.gate-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.screen-pass.screen-online-gate { gap: 18px; }
+
+/* ── Cinematic: dark placeholder so a still-loading image never flashes
+      white; the preloaded image then fades in via cinReveal (point 2) ── */
+.cin-painting-img { background: var(--surface-2); }
+
+/* ── Per-player color palette (points 4) ─────────── */
+/* Each `.gp-N` sets a single custom property reused by badges, haiku
+   entries and the active banner. */
+.gp-0 { --gp: #6ea8fe; }
+.gp-1 { --gp: #e0795b; }
+.gp-2 { --gp: #7bc97b; }
+.gp-3 { --gp: #c98fd6; }
+.gp-4 { --gp: #e6c84f; }
+.gp-5 { --gp: #5fc9c0; }
+
+.guess-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gp, var(--text-muted));
+  color: #10131a;
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* Colored numbered chips overlaid on a painting during deduction */
+.guess-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 5px;
+  z-index: 3;
+}
+.guess-badges .guess-badge {
+  width: 28px;
+  height: 28px;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+.painting-card.has-guess { outline: 2px solid rgba(255, 255, 255, 0.18); }
+
+/* Haiku entry accent + header */
+.haiku-entry { border-left: 3px solid var(--gp, var(--border)); }
+.haiku-entry-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.haiku-entry-head .player-name { margin: 0; }
+
+.deduction-active-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 3px solid var(--gp, var(--gold));
+}
+.dab-text { display: flex; flex-direction: column; gap: 2px; }
+
+/* ── Sequential resolution reveal (point 6) ──────── */
+@keyframes resItemIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ri-reveal { opacity: 0; animation: resItemIn 0.5s ease-out both; }
+.resolution-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}

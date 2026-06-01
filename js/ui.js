@@ -62,13 +62,21 @@ const UI = (() => {
   }
 
   function paintingCardHtml(painting, index, options = {}) {
-    const { selected, guessed, action, dataPaintingId, highlightedAs } = options;
+    const { selected, guessed, action, dataPaintingId, highlightedAs, guessBadges } = options;
     const cls = [
       'painting-card',
       selected && 'selected',
       guessed && 'guessed',
+      (guessBadges && guessBadges.length) && 'has-guess',
       highlightedAs && 'highlight-' + highlightedAs,
     ].filter(Boolean).join(' ');
+
+    // Colored numbered chips linking this painting to the haiku(s) assigned to it.
+    const badgesHtml = (guessBadges && guessBadges.length)
+      ? `<div class="guess-badges">${guessBadges.map(b =>
+          `<span class="guess-badge gp-${b.idx}" title="${escapeHtml(b.name)}">${b.idx + 1}</span>`
+        ).join('')}</div>`
+      : '';
 
     return `
       <div class="${cls}"
@@ -76,6 +84,7 @@ const UI = (() => {
            ${dataPaintingId !== undefined ? `data-painting-id="${dataPaintingId}"` : ''}>
         ${paintingImgHtml(painting)}
         ${index !== undefined ? `<div class="painting-number">${index + 1}</div>` : ''}
+        ${badgesHtml}
         <div class="painting-info">
           <div class="title">${escapeHtml(painting.title)}</div>
           <div class="artist">${escapeHtml(painting.artist)}, ${painting.year}</div>
@@ -279,27 +288,13 @@ const UI = (() => {
   // ── Turn reveal ──────────────────────────────────────
 
   function htmlTurnReveal(s) {
+    // Online: this is the synchronized GATE that comes BEFORE the reveal.
+    // Every player must click; once all have, the server moves everyone into
+    // the compose phase and each client plays the painting reveal in sync.
+    if (s.online) return htmlOnlineGate(s);
+
+    // Local: the painting grid + the "begin" button (single device).
     const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.turnPrelude) : '';
-
-    // Online: every player must click "Commencer les haïkus" before the secret
-    // phase begins. Once ready, the button waits on the others.
-    let actionsHtml;
-    if (s.online) {
-      actionsHtml = s.iAmReady
-        ? `<button class="btn btn-primary" data-action="begin-secret" disabled>
-             En attente des autres joueurs… (${s.readyCount}/${s.totalPlayers})
-           </button>
-           <p class="turn-ready-hint text-muted">Vous êtes prêt(e). La phase secrète démarrera quand tout le monde aura cliqué.</p>`
-        : `<button class="btn btn-primary" data-action="begin-secret">
-             Commencer les haïkus →
-           </button>
-           <p class="turn-ready-hint text-muted">${s.readyCount}/${s.totalPlayers} joueur${s.totalPlayers > 1 ? 's' : ''} prêt${s.readyCount > 1 ? 's' : ''}</p>`;
-    } else {
-      actionsHtml = `<button class="btn btn-primary" data-action="begin-secret">
-          Commencer les haïkus →
-        </button>`;
-    }
-
     return `
       <section class="screen-turn-reveal">
         <div class="turn-header">
@@ -315,8 +310,53 @@ const UI = (() => {
           })).join('')}
         </div>
         <div class="turn-actions">
-          ${actionsHtml}
+          <button class="btn btn-primary" data-action="begin-secret">
+            Commencer les haïkus →
+          </button>
         </div>
+      </section>`;
+  }
+
+  // Online pre-reveal gate. Button emits `ready-compose`; the reveal only
+  // starts once everyone has clicked (handled server-side).
+  function htmlOnlineGate(s) {
+    const readyBtn = s.iAmReady
+      ? `<button class="btn btn-primary" data-action="begin-secret" disabled>
+           En attente des autres… (${s.readyCount}/${s.totalPlayers})
+         </button>
+         <p class="turn-ready-hint text-muted">Vous êtes prêt(e). La découverte des tableaux démarrera quand tout le monde aura cliqué.</p>`
+      : `<button class="btn btn-primary" data-action="begin-secret">
+           Découvrir les tableaux →
+         </button>
+         <p class="turn-ready-hint text-muted">${s.readyCount}/${s.totalPlayers} prêt${s.readyCount > 1 ? 's' : ''}</p>`;
+
+    // Turn 0 in story mode opens with the narrative intro; later turns show the
+    // turn prelude. (The 6 paintings are NOT shown here — they are revealed,
+    // one by one, right after the gate.)
+    if (s.turnIndex === 0 && s.storyMode !== 'sobre') {
+      const lines = s.lastBeats.introLines || [];
+      const linesHtml = lines.map((line, i) =>
+        `<p class="intro-line" style="animation-delay:${0.3 + i * 1.6}s">${escapeHtml(line)}</p>`
+      ).join('');
+      const btnDelay = 0.3 + lines.length * 1.6 + 0.5;
+      return `
+        <section class="screen-intro screen-online-gate">
+          <div class="intro-eyebrow">Nuit au Musée</div>
+          <div class="intro-lines">${linesHtml}</div>
+          <div class="gate-actions intro-btn" style="animation-delay:${btnDelay}s">
+            ${readyBtn}
+          </div>
+        </section>`;
+    }
+
+    const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.turnPrelude, 'beat-center') : '';
+    return `
+      <section class="screen-pass screen-online-gate">
+        <div class="pass-icon">🖼️</div>
+        <div class="pass-title">Tour ${s.turnIndex + 1}</div>
+        ${beat}
+        <p class="pass-subtitle">Quand tout le monde est prêt, les tableaux du soir se dévoilent…</p>
+        <div class="gate-actions">${readyBtn}</div>
       </section>`;
   }
 
@@ -347,6 +387,89 @@ const UI = (() => {
 
   // ── Secret compose (combined pick + haiku) ──────────
 
+  // Dynamic compose pieces, extracted so patchCompose() can rebuild just these
+  // parts in place (avoids recreating the painting <img> on every keystroke).
+  function composeSlotsHtml(d, HAIKU_LENGTH) {
+    return Array.from({ length: HAIKU_LENGTH }, (_, slotIdx) => {
+      const verseId = d.selectedVerses[slotIdx];
+      if (verseId === undefined) {
+        return `
+          <div class="compose-slot empty">
+            <span class="slot-num">${slotIdx + 1}</span>
+            <span class="slot-placeholder">— choisissez un vers —</span>
+          </div>`;
+      }
+      const isFirst = slotIdx === 0;
+      const isLast  = slotIdx === d.selectedVerses.length - 1;
+      return `
+        <div class="compose-slot filled">
+          <span class="slot-num">${slotIdx + 1}</span>
+          <span class="slot-verse">${escapeHtml(verseText(verseId))}</span>
+          <div class="slot-controls">
+            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="up"
+                    ${isFirst ? 'disabled' : ''} title="Monter">↑</button>
+            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="down"
+                    ${isLast ? 'disabled' : ''} title="Descendre">↓</button>
+            <button class="slot-btn remove" data-action="remove-verse" data-verse-id="${verseId}"
+                    title="Retirer">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function verseHandHtml(player, d) {
+    return player.verseHand.map(verseId => {
+      const isUsed = d.selectedVerses.includes(verseId);
+      return `
+        <button class="verse-token ${isUsed ? 'used' : ''}"
+                data-action="add-verse" data-verse-id="${verseId}"
+                ${isUsed ? 'disabled' : ''}>
+          ${escapeHtml(verseText(verseId))}
+        </button>`;
+    }).join('');
+  }
+
+  function composeStatusHtml(s, d) {
+    if (d.paintingId === null) {
+      return '<em class="text-muted">Aucun tableau sélectionné — cliquez sur une œuvre pour la choisir.</em>';
+    }
+    const p = s.turnPaintings.find(p => p.id === d.paintingId);
+    return `<span class="chosen-painting">✓ ${escapeHtml(p.title)} — <span class="text-muted">${escapeHtml(p.artist)}</span></span>`;
+  }
+
+  // Update only the dynamic parts of an already-mounted compose screen, leaving
+  // the painting <img> elements untouched → no flicker on add/remove/select.
+  function patchCompose(s) {
+    const d = s.draft;
+    const player = Game.currentPlayer();
+    const { HAIKU_LENGTH } = Game.getConstants();
+
+    document.querySelectorAll('.screen-compose .paintings-grid .painting-card').forEach(card => {
+      const pid = parseInt(card.dataset.paintingId, 10);
+      const selected = d.paintingId === pid;
+      card.classList.toggle('selected', selected);
+      const btn = card.querySelector('[data-action="select-painting"]');
+      if (btn) { btn.disabled = selected; btn.textContent = selected ? '✓ Choisi' : 'Choisir'; }
+    });
+
+    const slots = document.querySelector('.screen-compose .compose-slots');
+    if (slots) slots.innerHTML = composeSlotsHtml(d, HAIKU_LENGTH);
+
+    const hand = document.querySelector('.screen-compose .verse-hand-grid');
+    if (hand) hand.innerHTML = verseHandHtml(player, d);
+
+    const status = document.querySelector('.screen-compose .compose-status');
+    if (status) status.innerHTML = composeStatusHtml(s, d);
+
+    const confirm = document.querySelector('.screen-compose [data-action="confirm-choice"]');
+    if (confirm) confirm.disabled = !Game.isDraftReady();
+
+    const prog = document.querySelector('.screen-compose .compose-online-progress');
+    if (prog && s.online) {
+      prog.textContent = `${s.submittedCount}/${s.totalPlayers} joueur${s.totalPlayers > 1 ? 's' : ''} ont validé — chacun compose de son côté.`;
+    }
+  }
+
   function htmlSecretCompose(s) {
     const player = Game.currentPlayer();
     const d      = s.draft;
@@ -375,50 +498,9 @@ const UI = (() => {
         </div>`;
     }).join('');
 
-    // Composition slots
-    const slotsHtml = Array.from({ length: HAIKU_LENGTH }, (_, slotIdx) => {
-      const verseId = d.selectedVerses[slotIdx];
-      if (verseId === undefined) {
-        return `
-          <div class="compose-slot empty">
-            <span class="slot-num">${slotIdx + 1}</span>
-            <span class="slot-placeholder">— choisissez un vers —</span>
-          </div>`;
-      }
-      const isFirst = slotIdx === 0;
-      const isLast  = slotIdx === d.selectedVerses.length - 1;
-      return `
-        <div class="compose-slot filled">
-          <span class="slot-num">${slotIdx + 1}</span>
-          <span class="slot-verse">${escapeHtml(verseText(verseId))}</span>
-          <div class="slot-controls">
-            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="up"
-                    ${isFirst ? 'disabled' : ''} title="Monter">↑</button>
-            <button class="slot-btn" data-action="move-verse" data-verse-id="${verseId}" data-dir="down"
-                    ${isLast ? 'disabled' : ''} title="Descendre">↓</button>
-            <button class="slot-btn remove" data-action="remove-verse" data-verse-id="${verseId}"
-                    title="Retirer">×</button>
-          </div>
-        </div>`;
-    }).join('');
-
-    // Verse hand
-    const handHtml = player.verseHand.map(verseId => {
-      const isUsed = d.selectedVerses.includes(verseId);
-      return `
-        <button class="verse-token ${isUsed ? 'used' : ''}"
-                data-action="add-verse" data-verse-id="${verseId}"
-                ${isUsed ? 'disabled' : ''}>
-          ${escapeHtml(verseText(verseId))}
-        </button>`;
-    }).join('');
-
-    const paintingHint = d.paintingId === null
-      ? '<em class="text-muted">Aucun tableau sélectionné — cliquez sur une œuvre pour la choisir.</em>'
-      : (() => {
-          const p = s.turnPaintings.find(p => p.id === d.paintingId);
-          return `<span class="chosen-painting">✓ ${escapeHtml(p.title)} — <span class="text-muted">${escapeHtml(p.artist)}</span></span>`;
-        })();
+    const slotsHtml = composeSlotsHtml(d, HAIKU_LENGTH);
+    const handHtml  = verseHandHtml(player, d);
+    const paintingHint = composeStatusHtml(s, d);
 
     let timerHtml = '';
     if (s.timerEnabled) {
@@ -478,22 +560,33 @@ const UI = (() => {
 
   function htmlDeduction(s) {
     const activeId = s.activeDeductionPlayer;
+    // Stable color + number per player (author of a haiku), for the chips that
+    // link each haiku to the painting it was assigned to.
+    const idxOf = id => s.players.findIndex(p => p.id === id);
+    const paintingNum = pid => {
+      const i = s.turnPaintings.findIndex(p => p.id === pid);
+      return i >= 0 ? `n°${i + 1}` : '';
+    };
 
     function haikuEntryHtml(player) {
+      const idx    = idxOf(player.id);
       const choice = s.choices.find(c => c.playerId === player.id);
       const lines  = choice ? haikuLines(choice) : [];
       const guess  = s.guesses[player.id];
       const guessedPainting = guess !== undefined
         ? s.turnPaintings.find(p => p.id === guess) : null;
       return `
-        <div class="haiku-entry ${activeId === player.id ? 'active' : ''} ${guess !== undefined ? 'assigned' : ''}"
+        <div class="haiku-entry gp-${idx} ${activeId === player.id ? 'active' : ''} ${guess !== undefined ? 'assigned' : ''}"
              data-action="activate-deduction" data-player-id="${player.id}">
-          <div class="player-name">${escapeHtml(player.name)}</div>
+          <div class="haiku-entry-head">
+            <span class="guess-badge gp-${idx}">${idx + 1}</span>
+            <span class="player-name">${escapeHtml(player.name)}</span>
+          </div>
           <div class="haiku-lines">
             ${lines.map(l => `<div>« ${escapeHtml(l)} »</div>`).join('')}
           </div>
           ${guessedPainting
-            ? `<div class="assigned-badge">→ ${escapeHtml(guessedPainting.title)}</div>`
+            ? `<div class="assigned-badge">→ tableau ${paintingNum(guess)} · ${escapeHtml(guessedPainting.title)}</div>`
             : ''}
         </div>`;
     }
@@ -501,26 +594,55 @@ const UI = (() => {
     const allDone = Game.allGuessesAssigned();
     const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.deductionTension) : '';
 
-    const paintingsHtml = s.turnPaintings.map((p, i) => {
-      const isGuessed = Object.values(s.guesses).includes(p.id);
-      return paintingCardHtml(p, i, {
-        guessed: isGuessed,
+    // Painting → list of haiku authors who guessed it (colored numbered chips).
+    const badgesByPainting = {};
+    s.players.forEach(pl => {
+      const g = s.guesses[pl.id];
+      if (g === undefined) return;
+      (badgesByPainting[g] = badgesByPainting[g] || []).push({ idx: idxOf(pl.id), name: pl.name });
+    });
+
+    const paintingsHtml = s.turnPaintings.map((p, i) =>
+      paintingCardHtml(p, i, {
         action: 'zoom-painting',
         dataPaintingId: p.id,
-      });
-    }).join('');
+        guessBadges: badgesByPainting[p.id] || [],
+      })
+    ).join('');
 
     const activeBannerHtml = (() => {
       if (activeId === null) return '';
+      const idx = idxOf(activeId);
       const activePlayer = s.players.find(p => p.id === activeId);
       const activeChoice = s.choices.find(c => c.playerId === activeId);
       const activeLines  = activeChoice ? haikuLines(activeChoice) : [];
       return `
-        <div class="deduction-active-banner">
-          <div class="dab-player">${escapeHtml(activePlayer.name)}</div>
-          <div class="dab-haiku">${activeLines.map(l => escapeHtml(l)).join(' · ')}</div>
+        <div class="deduction-active-banner gp-${idx}">
+          <span class="guess-badge gp-${idx}">${idx + 1}</span>
+          <div class="dab-text">
+            <div class="dab-player">${escapeHtml(activePlayer.name)}</div>
+            <div class="dab-haiku">${activeLines.map(l => escapeHtml(l)).join(' · ')}</div>
+          </div>
         </div>`;
     })();
+
+    // Online: every player must click before the answers are revealed.
+    let actionsHtml;
+    if (s.online) {
+      actionsHtml = s.iVotedReveal
+        ? `<button class="btn btn-primary" data-action="confirm-guesses" disabled>
+             En attente des autres… (${s.revealVoteCount}/${s.totalPlayers})
+           </button>
+           <p class="turn-ready-hint text-muted">Vous avez demandé la révélation. En attente des autres joueurs.</p>`
+        : `<button class="btn btn-primary" data-action="confirm-guesses" ${allDone ? '' : 'disabled'}>
+             Révéler les réponses →
+           </button>
+           ${allDone ? `<p class="turn-ready-hint text-muted">${s.revealVoteCount}/${s.totalPlayers} prêt${s.revealVoteCount > 1 ? 's' : ''} à révéler</p>` : ''}`;
+    } else {
+      actionsHtml = `<button class="btn btn-primary" data-action="confirm-guesses" ${allDone ? '' : 'disabled'}>
+          Révéler les réponses →
+        </button>`;
+    }
 
     return `
       <section class="screen-deduction">
@@ -530,7 +652,7 @@ const UI = (() => {
           <h2>Déduction collective</h2>
           <p class="text-muted">
             Sélectionnez un haïku, puis cliquez sur le tableau qu'il décrit.
-            Cliquez sur un tableau pour l'agrandir.
+            La pastille colorée relie chaque haïku au tableau choisi.
           </p>
         </div>
         ${tracksHtml(s)}
@@ -543,10 +665,7 @@ const UI = (() => {
           </div>
         </div>
         <div class="deduction-actions">
-          <button class="btn btn-primary" data-action="confirm-guesses"
-                  ${allDone ? '' : 'disabled'}>
-            Révéler les réponses →
-          </button>
+          ${actionsHtml}
         </div>
       </section>`;
   }
@@ -558,10 +677,12 @@ const UI = (() => {
     const over      = Game.checkGameOver();
     const wrongCount = items.length - correctCount;
 
-    function itemHtml({ player, choice, painting, guessedPainting, correct }) {
+    const stagger = 0.7; // seconds between each revealed solution
+    function itemHtml({ player, choice, painting, guessedPainting, correct }, i) {
       const lines = choice ? haikuLines(choice) : [];
       return `
-        <div class="resolution-item ${correct ? 'correct' : 'wrong'}">
+        <div class="resolution-item ri-reveal ${correct ? 'correct' : 'wrong'}"
+             style="animation-delay:${(0.15 + i * stagger).toFixed(2)}s">
           <div class="ri-painting-wrap"
                ${painting ? `data-action="zoom-painting" data-painting-id="${painting.id}"` : ''}>
             ${painting
@@ -601,19 +722,23 @@ const UI = (() => {
     const nextLabel = over ? 'Voir le résultat →' : 'Tour suivant →';
     const beat = s.storyMode !== 'sobre' ? storyBeatHtml(s.lastBeats.resolutionBeat) : '';
 
+    // Reveal the solutions one by one, then the verdict + tracks + button.
+    const summaryDelay = (0.15 + items.length * stagger + 0.25).toFixed(2);
     return `
       <section class="screen-resolution">
         <div class="resolution-header">
           <h2>Résolution</h2>
         </div>
         ${beat}
-        <div class="resolution-verdict ${verdictClass}">${verdictMsg}</div>
-        ${tracksHtml(s)}
         <div class="resolution-list">
-          ${items.map(i => itemHtml(i)).join('')}
+          ${items.map((it, i) => itemHtml(it, i)).join('')}
         </div>
-        <div class="resolution-actions">
-          <button class="btn btn-primary" data-action="next-turn">${nextLabel}</button>
+        <div class="resolution-summary ri-reveal" style="animation-delay:${summaryDelay}s">
+          <div class="resolution-verdict ${verdictClass}">${verdictMsg}</div>
+          ${tracksHtml(s)}
+          <div class="resolution-actions">
+            <button class="btn btn-primary" data-action="next-turn">${nextLabel}</button>
+          </div>
         </div>
       </section>`;
   }
@@ -889,7 +1014,7 @@ const UI = (() => {
   // ── Expose ───────────────────────────────────────────
 
   return {
-    render, renderSetup, updatePlayerInputs, updateTimer,
+    render, renderSetup, updatePlayerInputs, updateTimer, patchCompose,
     renderModeSelect, renderOnlineEntry, renderLobby, showToast,
   };
 

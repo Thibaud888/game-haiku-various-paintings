@@ -4,9 +4,12 @@
 //   • connects lazily on first emit;
 //   • receives a per-player `state` and enriches it into the same shape the
 //     local UI functions expect, so they can be reused unchanged;
-//   • plays the intro + painting-reveal cinematic LOCALLY at the start of each
-//     turn (each player has their own screen), then shows the turn-reveal
-//     "ready" gate;
+//   • plays the painting-reveal cinematic LOCALLY, but only AFTER the
+//     synchronized "ready" gate: when the server moves everyone into the
+//     compose phase for a new turn, every client starts the reveal at the same
+//     moment (→ the discovery happens together);
+//   • preloads the turn's images so they fade in fully (no top-to-bottom paint);
+//   • patches the compose screen in place to avoid the painting flicker;
 //   • runs the per-player composition timer locally.
 
 const Socket = (() => {
@@ -18,18 +21,21 @@ const Socket = (() => {
   let _state = null;
 
   // Local cinematic / reveal state (per turn, client-side only).
-  let _revealTurn      = -1;     // turnIndex whose reveal has been shown
+  let _revealTurn      = -1;     // turnIndex whose reveal has been played
   let _basePhase       = null;   // authoritative server phase (never overwritten)
-  let _override        = null;   // null | 'intro' | 'turn-reveal-cinematic'
+  let _override        = null;   // null | 'turn-reveal-cinematic'
   let _cinematicIndex  = 0;
   let _cinematicTimer  = null;
+
+  // Compose screen mounted for this turn (enables in-place patching).
+  let _mountedComposeTurn = null;
 
   // Local zoom (never synced).
   let _zoom = null;
 
   // Local composition timer.
-  let _timerRunning = false;
-  let _timerLeft    = 0;
+  let _timerRunning  = false;
+  let _timerLeft     = 0;
   let _timerInterval = null;
 
   // Host's chosen options, snapshotted from app.js (persists across re-renders).
@@ -95,6 +101,8 @@ const Socket = (() => {
       choices:               s.choices,
       guesses:               s.guesses,
       activeDeductionPlayer: s.activeDeductionPlayer,
+      revealVoteCount:       s.revealVoteCount,
+      iVotedReveal:          s.iVotedReveal,
       lastResolution:        s.lastResolution,
 
       storyMode:        s.storyMode,
@@ -119,47 +127,39 @@ const Socket = (() => {
     _state     = _enrich(raw);
     _basePhase = raw.phase;
 
-    // Start-of-turn cinematic (local, per player). Skipped in "sobre" mode and
-    // once the player has already passed the gate for this turn.
-    const newTurn = _state.phase === 'turn-reveal'
-      && _state.turnIndex !== _revealTurn
-      && _state.storyMode !== 'sobre'
-      && !_state.iAmReady;
-
-    if (newTurn) {
+    // The reveal now plays AFTER the synchronized gate: when the server moves
+    // everyone into the compose phase for a NEW turn, each client plays the
+    // cinematic locally — all starting together since the state arrives at the
+    // same moment for everyone.
+    if (_basePhase === 'secret-compose' && _state.turnIndex !== _revealTurn) {
       _revealTurn = _state.turnIndex;
-      _startReveal();
-      return;
+      if (_state.storyMode !== 'sobre') {
+        _startReveal();
+        return;
+      }
     }
 
-    // If a local reveal is playing, keep the freshest data but don't interrupt
-    // the animation (other players getting ready only changes the ready count).
+    // Don't interrupt an ongoing local reveal (other players getting ready /
+    // composing only changes counters we'll pick up when the reveal finishes).
     if (_override) return;
 
     _render();
   }
 
-  // ── Reveal sequence ───────────────────────────────────
+  // ── Reveal sequence (cinematic only; the intro lives on the gate screen) ──
 
   function _startReveal() {
     _clearCinematicTimer();
     _cinematicIndex = 0;
-    // Turn 0 opens with the narrative intro, later turns go straight to reveal.
-    _override = (_state.turnIndex === 0) ? 'intro' : 'turn-reveal-cinematic';
-    if (_override === 'turn-reveal-cinematic') _scheduleCinematic();
-    _render();
-  }
-
-  function dismissIntro() {
-    _override       = 'turn-reveal-cinematic';
-    _cinematicIndex = 0;
+    _override = 'turn-reveal-cinematic';
+    _preloadImages(_state.turnPaintings);
     _scheduleCinematic();
     _render();
   }
 
   function advanceCinematic() {
     _clearCinematicTimer();
-    if (_cinematicIndex < _state.turnPaintings.length - 1) {
+    if (_state && _cinematicIndex < _state.turnPaintings.length - 1) {
       _cinematicIndex++;
       _scheduleCinematic();
       _render();
@@ -199,6 +199,16 @@ const Socket = (() => {
     if (_cinematicTimer !== null) { clearTimeout(_cinematicTimer); _cinematicTimer = null; }
   }
 
+  // Preload the turn's paintings so the cinematic fades in a fully-decoded
+  // image instead of painting it top-to-bottom while it downloads.
+  function _preloadImages(paintings) {
+    (paintings || []).forEach(p => {
+      const img = new Image();
+      img.onerror = () => { if (p.remoteUrl && img.src !== p.remoteUrl) img.src = p.remoteUrl; };
+      img.src = p.imageUrl;
+    });
+  }
+
   // ── Composition timer (local, per player) ─────────────
 
   function _stopTimer() {
@@ -226,28 +236,36 @@ const Socket = (() => {
     if (!s) return;
 
     // Resolve the phase to render: a local cinematic override takes priority,
-    // otherwise fall back to the authoritative server phase. We never let the
-    // override permanently overwrite the real server phase.
+    // otherwise fall back to the authoritative server phase.
     s.phase = _override || _basePhase;
     if (_override) s.cinematicIndex = _cinematicIndex;
     s.zoomedPaintingId = _zoom;
 
     // Manage the composition timer.
     const composing = s.phase === 'secret-compose' && !s.mySubmitted;
-    if (composing && s.timerEnabled) {
-      _startTimer(s.timerDuration);
-    } else {
-      _stopTimer();
-    }
+    if (composing && s.timerEnabled) _startTimer(s.timerDuration);
+    else _stopTimer();
     s.timerSecondsLeft = _timerRunning ? _timerLeft : s.timerDuration;
 
     Game.setState(s);
+
+    // In-place patch of the compose screen to avoid recreating the <img>
+    // elements on every keystroke (which caused the painting flicker).
+    if (composing && !_override && _zoom === null
+        && _mountedComposeTurn === s.turnIndex
+        && document.querySelector('.screen-compose')
+        && !document.querySelector('.modal-overlay')) {
+      UI.patchCompose(s);
+      return;
+    }
+
     UI.render();
+    _mountedComposeTurn = (composing && !_override) ? s.turnIndex : null;
   }
 
   // ── Zoom (local) ──────────────────────────────────────
 
-  function setZoom(id) { _zoom = id; if (_state) { _state.zoomedPaintingId = id; } _render(); }
+  function setZoom(id) { _zoom = id; if (_state) _state.zoomedPaintingId = id; _render(); }
   function clearZoom() { setZoom(null); }
 
   // ── Public ────────────────────────────────────────────
@@ -265,13 +283,14 @@ const Socket = (() => {
     _override = null;
     _revealTurn = -1;
     _cinematicIndex = 0;
+    _mountedComposeTurn = null;
     _zoom = null;
   }
 
   return {
     emit, reset,
     setZoom, clearZoom,
-    dismissIntro, advanceCinematic, skipCinematic,
+    advanceCinematic, skipCinematic,
     getMyPlayerId: () => _myPlayerId,
     getRoomCode:   () => _roomCode,
   };

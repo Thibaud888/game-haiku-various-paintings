@@ -160,8 +160,8 @@ document.getElementById('app').addEventListener('click', e => {
 
 function handleOnlineAction(action, target, e) {
   switch (action) {
-    // Local-only reveal controls (each player plays them on their own screen)
-    case 'dismiss-intro':     Socket.dismissIntro();     return;
+    // Cinematic reveal controls (played per player, started in sync by the
+    // server moving everyone into the compose phase after the ready gate)
     case 'advance-cinematic': Socket.advanceCinematic(); return;
     case 'skip-cinematic':    Socket.skipCinematic();    return;
 
@@ -209,7 +209,8 @@ function handleOnlineAction(action, target, e) {
       Socket.emit('game-action', { action: 'activate-deduction', payload: { playerId: parseInt(target.dataset.playerId, 10) } });
       return;
     case 'confirm-guesses':
-      Socket.emit('game-action', { action: 'confirm-guesses', payload: {} });
+      // Online: every player must click before the answers are revealed.
+      Socket.emit('game-action', { action: 'request-reveal', payload: {} });
       return;
     case 'next-turn':
       Socket.emit('game-action', { action: 'next-turn', payload: {} });
@@ -384,9 +385,6 @@ document.addEventListener('keydown', e => {
 
   // Online reveal shortcuts
   if (appMode === 'online' && s) {
-    if (s.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault(); Socket.dismissIntro(); return;
-    }
     if (s.phase === 'turn-reveal-cinematic') {
       if (e.key === 'Escape')              { e.preventDefault(); Socket.skipCinematic(); }
       else if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); Socket.advanceCinematic(); }
