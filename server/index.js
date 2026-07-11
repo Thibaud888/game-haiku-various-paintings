@@ -243,4 +243,4 @@ function playerView(room, myId) {
 setInterval(cleanStaleRooms, 10 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Nuit au Musée server on http://localhost:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Nuit au Musée server on http://localhost:${PORT}`));
