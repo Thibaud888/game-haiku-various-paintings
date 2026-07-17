@@ -30,3 +30,14 @@ if (bad) {
   process.exit(1);
 }
 console.log(`VERIFY OK : ${files.length} fichiers JS valides.`);
+
+// Vérification optionnelle des URLs Wikimedia (peut être long, activé avec VERIFY_URLS=1)
+if (process.env.VERIFY_URLS === '1') {
+  console.log('\nVérification des URLs Wikimedia...');
+  try {
+    execSync('node scripts/verify-urls.mjs', { stdio: 'inherit' });
+  } catch (e) {
+    console.error('\nVERIFY ÉCHEC : Des URLs Wikimedia sont cassées.');
+    process.exit(1);
+  }
+}
