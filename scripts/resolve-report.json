@@ -1,0 +1,767 @@
+{
+  "timestamp": "2026-07-17T09:15:38.848Z",
+  "resolved": [
+    {
+      "id": 0,
+      "oldFile": "Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg",
+      "newFile": "Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg"
+    },
+    {
+      "id": 1,
+      "oldFile": "Última_Cena_-_Da_Vinci_5.jpg",
+      "newFile": "Leonardo da Vinci (1452-1519) - The Last Supper (1495-1498).jpg"
+    },
+    {
+      "id": 2,
+      "oldFile": "Leonardo_Da_Vinci_-_Vergine_delle_Rocce_(Louvre).jpg",
+      "newFile": "Leonardo Da Vinci - Vergine delle Rocce (Louvre).jpg"
+    },
+    {
+      "id": 3,
+      "oldFile": "Dama_z_gronostajem.jpg",
+      "newFile": "Lady with an Ermine - Leonardo da Vinci - Google Art Project.jpg"
+    },
+    {
+      "id": 4,
+      "oldFile": "Michelangelo_-_Creation_of_Adam_(cropped).jpg",
+      "newFile": "The Creation of Adam perspective fix.jpg"
+    },
+    {
+      "id": 5,
+      "oldFile": "Last_Judgement_(Michelangelo).jpg",
+      "newFile": "Le jugement dernier de Michel-Ange.jpg"
+    },
+    {
+      "id": 6,
+      "oldFile": "Raphael_School_of_Athens.jpg",
+      "newFile": "\"The School of Athens\" by Raffaello Sanzio da Urbino.jpg"
+    },
+    {
+      "id": 7,
+      "oldFile": "RAFAEL_-_Madonna_Sixtina_(Gemäldegalerie_Alter_Meister,_Dresde,_1513-14._Óleo_sobre_lienzo,_265_x_196_cm).jpg",
+      "newFile": "Raphael - The Sistine Madonna - Google Arts & Culture.jpg"
+    },
+    {
+      "id": 8,
+      "oldFile": "Transfiguration_Raphael.jpg",
+      "newFile": "Transfigurazione (Raffaello) September 2015-1a.jpg"
+    },
+    {
+      "id": 9,
+      "oldFile": "Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg",
+      "newFile": "Sandro Botticelli 046.jpg"
+    },
+    {
+      "id": 10,
+      "oldFile": "Botticelli-primavera.jpg",
+      "newFile": "Primavera (Botticelli).jpg"
+    },
+    {
+      "id": 11,
+      "oldFile": "Sandro_Botticelli_-_Pallas_and_the_Centaur_-_Google_Art_Project.jpg",
+      "newFile": "P1040669 Sandro Botticelli - Pallas et le centaure.jpg"
+    },
+    {
+      "id": 12,
+      "oldFile": "Tiziano_-_Venere_di_Urbino_-_Google_Art_Project.jpg",
+      "newFile": "Tiziano - Venere di Urbino - Google Art Project.jpg"
+    },
+    {
+      "id": 13,
+      "oldFile": "Titian_Bacchus_and_Ariadne.jpg",
+      "newFile": "Titian Bacchus and Ariadne.jpg"
+    },
+    {
+      "id": 14,
+      "oldFile": "Tizian_041.jpg",
+      "newFile": "Duomo (Verona) - Cartolari-Nichesola Chapel - L'assunzione del Tiziano.jpg"
+    },
+    {
+      "id": 15,
+      "oldFile": "Angelo_Bronzino_-_Venus,_Cupid,_Folly_and_Time_-_National_Gallery,_London.jpg",
+      "newFile": "Angelo Bronzino - Venus, Cupid, Folly and Time - National Gallery, London.jpg"
+    },
+    {
+      "id": 16,
+      "oldFile": "Vertumnus_årstidernas_gud_målad_av_Giuseppe_Arcimboldo_1591_-_Skoklosters_slott_-_91503.tiff",
+      "newFile": "Vertumnus årstidernas gud målad av Giuseppe Arcimboldo 1591 - Skoklosters slott - 91503.jpg"
+    },
+    {
+      "id": 17,
+      "oldFile": "Giuseppe_Arcimboldo_-_Summer,_1573.jpg",
+      "newFile": "Giuseppe Arcimboldo - Summer - Google Art Project.jpg"
+    },
+    {
+      "id": 18,
+      "oldFile": "Giotto_-_Scrovegni_-_-31-_-_Kiss_of_Judas.jpg",
+      "newFile": "Giotto di Bondone - No. 31 Scenes from the Life of Christ - 15. The Arrest of Christ (Kiss of Judas) - WGA09216.jpg"
+    },
+    {
+      "id": 19,
+      "oldFile": "Giotto_-_Scrovegni_-_-36-_-_Lamentation_(The_Mourning_of_Christ)_adj.jpg",
+      "newFile": "Compianto sul Cristo morto.jpg"
+    },
+    {
+      "id": 20,
+      "oldFile": "Duccio_di_Buoninsegna_037.jpg",
+      "newFile": "Duccio di Buoninsegna - Christ and the Samaritan Woman - Google Art Project.jpg"
+    },
+    {
+      "id": 21,
+      "oldFile": "ANGELICO,_Fra_Annunciation,_1437-46_(2236990916).jpg",
+      "newFile": "La Anunciación, by Fra Angelico, from Prado in Google Earth.jpg"
+    },
+    {
+      "id": 22,
+      "oldFile": "Paolo_Uccello_016.jpg",
+      "newFile": "Paolo Uccello 016.jpg"
+    },
+    {
+      "id": 23,
+      "oldFile": "Giorgione_019.jpg",
+      "newFile": "6,99Mo-Giorgione 019.jpg"
+    },
+    {
+      "id": 24,
+      "oldFile": "Sanzio_01_Plato_Aristotle.jpg",
+      "newFile": "Raphaël - Etude faite pour l'école d'Athènes, 17-525850.jpg"
+    },
+    {
+      "id": 25,
+      "oldFile": "Lamgods_open.jpg",
+      "newFile": "L'Adoration de l'Agneau mystique (Frères Van Eyck), GP032133.jpg"
+    },
+    {
+      "id": 26,
+      "oldFile": "Van_Eyck_-_Arnolfini_Portrait.jpg",
+      "newFile": "Van Eyck - Arnolfini Portrait.jpg"
+    },
+    {
+      "id": 27,
+      "oldFile": "Jan_van_Eyck_-_Virgin_and_Child_with_Chancellor_Rolin_-_Google_Art_Project.jpg",
+      "newFile": "La Vierge du chancelier Rolin - Jan van Eyck - Musée du Louvre Peintures INV 1271 ; MR 705.jpg"
+    },
+    {
+      "id": 28,
+      "oldFile": "Portrait_of_a_Man_in_a_Turban_(Jan_van_Eyck).jpg",
+      "newFile": "Portrait of a Man in a Turban (Jan van Eyck).jpg"
+    },
+    {
+      "id": 29,
+      "oldFile": "The_Garden_of_earthly_delights.jpg",
+      "newFile": "The Garden of Earthly Delights by Bosch High Resolution.jpg"
+    },
+    {
+      "id": 30,
+      "oldFile": "The_Haywain_Triptych_by_Hieronymus_Bosch.jpg",
+      "newFile": "Le chariot de foin - Jérôme Bosch - btv1b8435258b.jpg"
+    },
+    {
+      "id": 31,
+      "oldFile": "Hieronymus_Bosch_-_Temptation_of_St._Anthony.jpg",
+      "newFile": "The Temptation of St Anthony (Bosch).jpg"
+    },
+    {
+      "id": 32,
+      "oldFile": "Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_(Vienna)_-_Google_Art_Project.jpg",
+      "newFile": "Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project - edited.jpg"
+    },
+    {
+      "id": 33,
+      "oldFile": "Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg",
+      "newFile": "Pieter Bruegel the Elder - Hunters in the Snow (Winter) - Google Art Project.jpg"
+    },
+    {
+      "id": 35,
+      "oldFile": "The_Triumph_of_Death_by_Pieter_Bruegel_the_Elder.jpg",
+      "newFile": "The Triumph of Death by Pieter Bruegel the Elder.jpg"
+    },
+    {
+      "id": 36,
+      "oldFile": "Hans_Holbein_the_Younger_-_The_Ambassadors_-_Google_Art_Project.jpg",
+      "newFile": "Hans Holbein the Younger - The Ambassadors - Google Art Project.jpg"
+    },
+    {
+      "id": 37,
+      "oldFile": "Workshop_of_Hans_Holbein_the_Younger_-_Portrait_of_Henry_VIII_-_Google_Art_Project.jpg",
+      "newFile": "Portrait of Henry VIII of England (Holbein).jpg"
+    },
+    {
+      "id": 38,
+      "oldFile": "Albrecht_Dürer_-_Melencolia_I_-_Google_Art_Project_(_AGDdr3EHmNGyA).jpg",
+      "newFile": "Albrecht Dürer - Melencolia I - Google Art Project (427760).jpg"
+    },
+    {
+      "id": 39,
+      "oldFile": "Albrecht_Dürer_-_Knight,_Death_and_the_Devil_(NGA_1943.3.3519).jpg",
+      "newFile": "0 'Le Cavalier la Mort et le Diable' - Albrecht Dürer - BRB - Mac's - Hornu.JPG"
+    },
+    {
+      "id": 42,
+      "oldFile": "Weyden_Deposition.jpg",
+      "newFile": "El Descendimiento, by Rogier van der Weyden, from Prado in Google Earth.jpg"
+    },
+    {
+      "id": 43,
+      "oldFile": "Polyptych_of_the_Last_Judgement_(Rogier_van_der_Weyden)_-_Hôtel-Dieu,_Beaune.jpg",
+      "newFile": "Rogier van der Weyden 001.jpg"
+    },
+    {
+      "id": 44,
+      "oldFile": "The_Calling_of_Saint_Matthew-Caravaggo_(1599-1600).jpg",
+      "newFile": "0 'La Vocation de saint Matthieu' de Le Caravage - fr2.JPG"
+    },
+    {
+      "id": 45,
+      "oldFile": "Caravaggio_Judith_Beheading_Holofernes.jpg",
+      "newFile": "Judith Beheading Holofernes - Caravaggio.jpg"
+    },
+    {
+      "id": 46,
+      "oldFile": "Caravaggio_-_Cena_in_Emmaus.jpg",
+      "newFile": "Supper at Emmaus-Caravaggio (1606).jpg"
+    },
+    {
+      "id": 47,
+      "oldFile": "Caravaggio_-_Bacco_adolescente_-_Google_Art_Project.jpg",
+      "newFile": "Bacchus by Caravaggio 1.jpg"
+    },
+    {
+      "id": 48,
+      "oldFile": "Le_Caravage_-_La_Mort_de_la_Vierge.jpg",
+      "newFile": "Death of the Virgin-Caravaggio (1606).jpg"
+    },
+    {
+      "id": 49,
+      "oldFile": "Artemisia_Gentileschi_Judith_Maidservant_DIA.jpg",
+      "newFile": "Judith and her maid Abra with the Head of Holofernes by Artemisia Gentileschi ca. 1645-1650.jpg"
+    },
+    {
+      "id": 50,
+      "oldFile": "Artemisia_Gentileschi_-_Giuditta_decapita_Oloferne_-_Google_Art_Project-Adjust.jpg",
+      "newFile": "Artemisia Gentileschi - Judith Beheading Holofernes - WGA8563.jpg"
+    },
+    {
+      "id": 51,
+      "oldFile": "Peter_Paul_Rubens_-_Descent_from_the_Cross_-_WGA20212.jpg",
+      "newFile": "Peter Paul Rubens - Descent from the cross (1617).jpg"
+    },
+    {
+      "id": 52,
+      "oldFile": "Peter_Paul_Rubens_-_The_Three_Graces,_1635.jpg",
+      "newFile": "The Three Graces, by Peter Paul Rubens, from Prado in Google Earth.jpg"
+    },
+    {
+      "id": 53,
+      "oldFile": "Peter_Paul_Rubens_-_Le_Chapeau_de_Paille.jpg",
+      "newFile": "Le Chapeau de Paille by Peter Paul Rubens.jpg"
+    },
+    {
+      "id": 54,
+      "oldFile": "Peter_Paul_Rubens_-_The_Consequences_of_War_-_WGA20279.jpg",
+      "newFile": "Rubens - The Consequences of War 09.jpg"
+    },
+    {
+      "id": 56,
+      "oldFile": "Las_Meninas,_by_Diego_Velázquez,_from_Prado_in_Google_Earth.jpg",
+      "newFile": "Las Meninas, by Diego Velázquez, from Prado in Google Earth.jpg"
+    },
+    {
+      "id": 57,
+      "oldFile": "Rokeby_Venus.jpg",
+      "newFile": "Diego Velázquez - Rokeby Venus.jpg"
+    },
+    {
+      "id": 58,
+      "oldFile": "Velázquez_-_de_Breda_o_Las_Lanzas_(Museo_del_Prado,_1634-35).jpg",
+      "newFile": "Velazquez-The Surrender of Breda.jpg"
+    },
+    {
+      "id": 59,
+      "oldFile": "Portrait_of_Innocent_X.jpg",
+      "newFile": "Portrait of Pope Innocent X (by Circle of Diego Velázquez) - National Gallery of Art.jpg"
+    },
+    {
+      "id": 60,
+      "oldFile": "L'Adoration_des_bergers_-_Jusepe_de_Ribera_-_Musée_du_Louvre_Peintures_INV_939_;_MR_209.jpg",
+      "newFile": "Saint Mary of the Assumption Parish (Springboro, Ohio) - stained-glass, Adoration by the Shepherds detail 2.jpg"
+    },
+    {
+      "id": 61,
+      "oldFile": "Bartolomé_Esteban_Perez_Murillo_023.jpg",
+      "newFile": "Bartolomé Esteban Murillo - The Young Beggar.JPG"
+    },
+    {
+      "id": 62,
+      "oldFile": "The_Night_Watch_-_HD.jpg",
+      "newFile": "La ronda de noche, por Rembrandt van Rijn.jpg"
+    },
+    {
+      "id": 63,
+      "oldFile": "Rembrandt_-_The_Anatomy_Lesson_of_Dr_Nicolaes_Tulp.jpg",
+      "newFile": "Rembrandt - The Anatomy Lesson of Dr Nicolaes Tulp.jpg"
+    },
+    {
+      "id": 64,
+      "oldFile": "Rembrandt_Harmensz_van_Rijn_-_Return_of_the_Prodigal_Son_-_Google_Art_Project.jpg",
+      "newFile": "Rembrandt Harmensz van Rijn - Return of the Prodigal Son - Google Art Project.jpg"
+    },
+    {
+      "id": 65,
+      "oldFile": "Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg",
+      "newFile": "Rembrandt van Rijn - Self-Portrait - Google Art Project.jpg"
+    },
+    {
+      "id": 66,
+      "oldFile": "Meisje_met_de_parel.jpg",
+      "newFile": "1665 Girl with a Pearl Earring.jpg"
+    },
+    {
+      "id": 67,
+      "oldFile": "Vermeer-view-of-delft.jpg",
+      "newFile": "View of Delft, by Johannes Vermeer.jpg"
+    },
+    {
+      "id": 68,
+      "oldFile": "Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg",
+      "newFile": "Johannes Vermeer - Het melkmeisje - Google Art Project.jpg"
+    },
+    {
+      "id": 70,
+      "oldFile": "Johannes_Vermeer_-_Woman_Holding_a_Balance_-_Google_Art_Project.jpg",
+      "newFile": "Johannes Vermeer - Woman Holding a Balance - Google Art Project.jpg"
+    },
+    {
+      "id": 71,
+      "oldFile": "Johannes_Vermeer_-_The_Love_Letter_-_WGA24665.jpg",
+      "newFile": "Vermeer, Johannes - The Loveletter.jpg"
+    },
+    {
+      "id": 72,
+      "oldFile": "Jan_Vermeer_van_Delft_003.jpg",
+      "newFile": "Johannes Vermeer - Girl Reading a Letter by an Open Window - Google Art Project.jpg"
+    },
+    {
+      "id": 73,
+      "oldFile": "The_Slaughtered_Ox_-_Rembrandt.jpg",
+      "newFile": "Rembrandt - The Flayed Ox - WGA19252.jpg"
+    },
+    {
+      "id": 74,
+      "oldFile": "Frans_Hals_-_The_Merry_Drinker_-_WGA11098.jpg",
+      "newFile": "Frans Hals 002.jpg"
+    },
+    {
+      "id": 75,
+      "oldFile": "Frans_Hals_-_Gypsy_Girl_-_WGA11100.jpg",
+      "newFile": "La Bohémienne endormie.jpg"
+    },
+    {
+      "id": 76,
+      "oldFile": "Francisco_de_Goya,_Saturno_devorando_a_su_hijo_(1819-1823).jpg",
+      "newFile": "Francisco de Goya, Saturno devorando a su hijo (1819-1823).jpg"
+    },
+    {
+      "id": 77,
+      "oldFile": "Goya_Maja_naga2.jpg",
+      "newFile": "Maja desnuda (museo del Prado).jpg"
+    },
+    {
+      "id": 78,
+      "oldFile": "Maja_vestida.jpg",
+      "newFile": "Goya Maja ubrana2.jpg"
+    },
+    {
+      "id": 79,
+      "oldFile": "El_Tres_de_Mayo,_by_Francisco_de_Goya,_from_Prado_thin_black_margin.jpg",
+      "newFile": "El Tres de Mayo, by Francisco de Goya, from Prado thin black margin.jpg"
+    },
+    {
+      "id": 80,
+      "oldFile": "El_dos_de_mayo_de_1808_en_Madrid.jpg",
+      "newFile": "El dos de mayo de 1808 en Madrid.jpg"
+    },
+    {
+      "id": 81,
+      "oldFile": "Witches_Sabbath_(The_Great_He-Goat).jpg",
+      "newFile": "GOYA - El aquelarre (Museo Lázaro Galdiano, Madrid, 1797-98).jpg"
+    },
+    {
+      "id": 82,
+      "oldFile": "Goya_-_Caprichos_(43).jpg",
+      "newFile": "Francisco José de Goya y Lucientes - The sleep of reason produces monsters (No. 43), from Los Caprichos - Google Art Project.jpg"
+    },
+    {
+      "id": 83,
+      "oldFile": "Francisco_de_Goya_y_Lucientes_-_Familia_de_Carlos_IV.jpg",
+      "newFile": "La familia de Carlos IV.jpg"
+    },
+    {
+      "id": 84,
+      "oldFile": "L'Embarquement_pour_Cythère,_by_Antoine_Watteau,_from_C2RMF_retouched.jpg",
+      "newFile": "L'Embarquement pour Cythère, by Antoine Watteau, from C2RMF retouched.jpg"
+    },
+    {
+      "id": 85,
+      "oldFile": "Antoine_Watteau_-_Pierrot,_dit_autrefois_Gilles_-_Google_Art_Project.jpg",
+      "newFile": "Jean-Antoine Watteau - Pierrot, dit autrefois Gilles.jpg"
+    },
+    {
+      "id": 86,
+      "oldFile": "Fragonard,_The_Swing.jpg",
+      "newFile": "Joean Honoré Fragonard - The Swing.jpg"
+    },
+    {
+      "id": 87,
+      "oldFile": "Jean-Honoré_Fragonard_-_The_Bolt_-_WGA08086.jpg",
+      "newFile": "Jean-Honoré Fragonard 009.jpg"
+    },
+    {
+      "id": 89,
+      "oldFile": "Jean-Baptiste_Simeon_Chardin_-_Saying_Grace.JPG",
+      "newFile": "Jean-Baptiste Simeon Chardin Saying Grace.jpg"
+    },
+    {
+      "id": 90,
+      "oldFile": "Marie_Antoinette_Adult4.jpg",
+      "newFile": "Louise Elisabeth Vigée-Lebrun - Marie-Antoinette dit « à la Rose » - Google Art Project.jpg"
+    },
+    {
+      "id": 91,
+      "oldFile": "Élisabeth_Louise_Vigée_Le_Brun_-_Self-Portrait_in_a_Straw_Hat.jpg",
+      "newFile": "Self-portrait in a Straw Hat by Elisabeth-Louise Vigée-Lebrun.jpg"
+    },
+    {
+      "id": 92,
+      "oldFile": "Death_of_Marat_by_David.jpg",
+      "newFile": "Death of Marat by David.jpg"
+    },
+    {
+      "id": 93,
+      "oldFile": "Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1805-1807).jpg",
+      "newFile": "Jacques-Louis David - Le Sacre de Napoléon.jpg"
+    },
+    {
+      "id": 94,
+      "oldFile": "Jacques-Louis_David,_Le_Serment_des_Horaces.jpg",
+      "newFile": "Jacques-Louis David, Le Serment des HoracesFXD.jpg"
+    },
+    {
+      "id": 95,
+      "oldFile": "David_-_Napoleon_crossing_the_Alps_-_Malmaison2.jpg",
+      "newFile": "Napoleon at the Great St. Bernard - Jacques-Louis David - Google Cultural Institute.jpg"
+    },
+    {
+      "id": 96,
+      "oldFile": "Jean_Auguste_Dominique_Ingres,_La_Grande_Odalisque,_1814.jpg",
+      "newFile": "Tête de la grande odalisque couchée par Jean-Auguste-Dominique Ingres.jpg"
+    },
+    {
+      "id": 97,
+      "oldFile": "Jean_Auguste_Dominique_Ingres_-_The_Turkish_Bath_-_Google_Art_Project.jpg",
+      "newFile": "Le Bain Turc, by Jean Auguste Dominique Ingres, from C2RMF retouched.jpg"
+    },
+    {
+      "id": 98,
+      "oldFile": "Jean-Auguste-Dominique_Ingres,_La_Source,_1856.jpg",
+      "newFile": "Jean Auguste Dominique Ingres - The Spring - Google Art Project 2.jpg"
+    },
+    {
+      "id": 99,
+      "oldFile": "Jean_Auguste_Dominique_Ingres_-_The_Apotheosis_of_Homer_-_WGA11842.jpg",
+      "newFile": "Ingres - Etudes pour L'Apothéose d'Homère, RF 2471.jpg"
+    },
+    {
+      "id": 100,
+      "oldFile": "Eugène_Delacroix_-_La_liberté_guidant_le_peuple.jpg",
+      "newFile": "Eugène Delacroix - La liberté guidant le peuple.jpg"
+    },
+    {
+      "id": 101,
+      "oldFile": "Eugène_Delacroix_-_La_Mort_de_Sardanapale.jpg",
+      "newFile": "Death of Sardanapalus by Eugène Delacroix.jpg"
+    },
+    {
+      "id": 102,
+      "oldFile": "Eugène_Delacroix_-_Le_Massacre_de_Scio.jpg",
+      "newFile": "Scène des massacres de Scio.jpg"
+    },
+    {
+      "id": 103,
+      "oldFile": "Femmes_d'Alger_dans_leur_appartement.jpg",
+      "newFile": "Femmes d'Alger dans leur appartement, Eugène Delacroix - Musée du Louvre Peintures INV 3824.jpg"
+    },
+    {
+      "id": 104,
+      "oldFile": "Théodore_Géricault,_Le_Radeau_de_la_Méduse.jpg",
+      "newFile": "Musée Ingres-Bourdelle - Etude de dos pour Le Radeau de La Méduse (d'après le modèle Joseph) 1818-1819 - Théodore Géricault MID.55.4.1 Jodonde06070001419.jpg"
+    },
+    {
+      "id": 105,
+      "oldFile": "Théodore_Géricault_-_The_Wounded_Cuirassier_-_WGA08653.jpg",
+      "newFile": "Brooklyn Museum - The Wounded Cuirassier study (Le Cuirassier blessé quittant le feu esquisse) - Théodore Géricault.jpg"
+    },
+    {
+      "id": 107,
+      "oldFile": "Caspar_David_Friedrich_-_Der_Mönch_am_Meer_-_Google_Art_Project.jpg",
+      "newFile": "Friedrich, Caspar David - Mönch am Meer - Alte Nationalgalerie in Berlin.jpg"
+    },
+    {
+      "id": 108,
+      "oldFile": "Caspar_David_Friedrich_-_Das_Eismeer_-_Hamburger_Kunsthalle_-_02.jpg",
+      "newFile": "Caspar David Friedrich - Das Eismeer - Hamburger Kunsthalle - 02.jpg"
+    },
+    {
+      "id": 109,
+      "oldFile": "Caspar_David_Friedrich_032.jpg",
+      "newFile": "Caspar David Friedrich - Abtei im Eichwald - Google Art Project.jpg"
+    },
+    {
+      "id": 110,
+      "oldFile": "Rain_Steam_and_Speed_the_Great_Western_Railway.jpg",
+      "newFile": "Turner - Rain, Steam and Speed - National Gallery file.jpg"
+    },
+    {
+      "id": 114,
+      "oldFile": "John_Constable_The_Hay_Wain.jpg",
+      "newFile": "John Constable - The Hay Wain (1821).jpg"
+    },
+    {
+      "id": 115,
+      "oldFile": "John_Constable_-_Salisbury_Cathedral_from_the_Meadows.jpg",
+      "newFile": "Constable Salisbury meadows.jpg"
+    },
+    {
+      "id": 116,
+      "oldFile": "Origin-of-the-World.jpg",
+      "newFile": "Gustave Courbet-L'Origine du Monde-1866.jpg"
+    },
+    {
+      "id": 117,
+      "oldFile": "Gustave_Courbet_-_The_Artist's_Studio.jpg",
+      "newFile": "Courbet LAtelier du peintre.jpg"
+    },
+    {
+      "id": 118,
+      "oldFile": "Gustave_Courbet_-_A_Burial_at_Ornans_-_Google_Art_Project_2.jpg",
+      "newFile": "Gustave Courbet - A Burial at Ornans - Google Art Project 2.jpg"
+    },
+    {
+      "id": 119,
+      "oldFile": "Gustave_Courbet_018.jpg",
+      "newFile": "Les Casseurs de pierres by Courbet (Winterthour).png"
+    },
+    {
+      "id": 120,
+      "oldFile": "JEAN-FRANÇOIS_MILLET_-_El_Ángelus_(Museo_de_Orsay,_1857-1859._Óleo_sobre_lienzo,_55.5_x_66_cm).jpg",
+      "newFile": "Jean-François Millet Angelus.jpg"
+    },
+    {
+      "id": 121,
+      "oldFile": "Jean-François_Millet_-_Gleaners_-_Google_Art_Project_2.jpg",
+      "newFile": "Jean-François Millet - Gleaners - Google Art Project 2.jpg"
+    },
+    {
+      "id": 122,
+      "oldFile": "Honoré_Daumier_-_The_Third-Class_Carriage_-_Walters_37458.jpg",
+      "newFile": "Honoré Daumier (1808-1879) - Le wagon de troisième classe - 1995.36 - Manchester Art Gallery.jpg"
+    },
+    {
+      "id": 123,
+      "oldFile": "Jean-Baptiste-Camille_Corot_-_Le_Souvenir_de_Mortefontaine_-_Google_Art_Project.jpg",
+      "newFile": "Souvenir de Mortefontaine - Jean-Baptiste Camille Corot - Musée du Louvre Peintures MI 692 bis - photo 2.jpg"
+    },
+    {
+      "id": 124,
+      "oldFile": "Edouard_Manet_-_Luncheon_on_the_Grass_-_Google_Art_Project.jpg",
+      "newFile": "Édouard Manet - Le Déjeuner sur l'herbe.jpg"
+    },
+    {
+      "id": 125,
+      "oldFile": "Edouard_Manet_-_Olympia_-_Google_Art_Project_3.jpg",
+      "newFile": "Edouard Manet - Olympia - Google Art Project 3.jpg"
+    },
+    {
+      "id": 126,
+      "oldFile": "Edouard_Manet,_A_Bar_at_the_Folies-Bergère.jpg",
+      "newFile": "Edouard Manet, A Bar at the Folies-Bergère.jpg"
+    },
+    {
+      "id": 127,
+      "oldFile": "Edouard_Manet_-_Le_Fifre,_1866.jpg",
+      "newFile": "Le fifre, detail.png"
+    },
+    {
+      "id": 128,
+      "oldFile": "Whistlers_Mother_high_res.jpg",
+      "newFile": "Whistlers Mother high res.jpg"
+    },
+    {
+      "id": 129,
+      "oldFile": "Henri_de_Toulouse-Lautrec_005.jpg",
+      "newFile": "(Albi) Au Moulin-Rouge. Portrait de Monsieur Warner 1892 - Toulouse-Lautrec - MTL.144.jpg"
+    },
+    {
+      "id": 130,
+      "oldFile": "Lautrec_la_goulue_arriving_at_the_moulin_rouge_with_two_women_1892.jpg",
+      "newFile": "(Albi) Moulin-rouge. La Goulue et Valentin le desossé - Toulouse-Lautrec 1891 - Inv.138.jpg"
+    },
+    {
+      "id": 131,
+      "oldFile": "Henri_de_Toulouse-Lautrec_004.jpg",
+      "newFile": "(Albi) Jane Avril - La mélinite dansant Toulouse-Lautrec (1892) MTL.148.jpg"
+    },
+    {
+      "id": 132,
+      "oldFile": "Monet_-_Impression,_Sunrise.jpg",
+      "newFile": "Monet - Impression, Sunrise.jpg"
+    },
+    {
+      "id": 133,
+      "oldFile": "Claude_Monet_-_Water_Lilies_-_1906,_Ryerson.jpg",
+      "newFile": "Detail of \"The Water-Lily Pond\" by Claude Monet 02.jpg"
+    },
+    {
+      "id": 134,
+      "oldFile": "Claude_Monet_-_Rouen_Cathedral,_Façade_(Sunset).JPG",
+      "newFile": "\"La cathédrale de Rouen le matin (dominante rose)\", 1894, by Claude Monet - Goulandris collection, Athens.jpg"
+    },
+    {
+      "id": 135,
+      "oldFile": "Claude_Monet_-_Poppy_Field_in_Argenteuil.jpg",
+      "newFile": "Claude Monet - Poppy Field - Google Art Project.jpg"
+    },
+    {
+      "id": 136,
+      "oldFile": "Claude_Monet_-_The_Magpie_-_Google_Art_Project.jpg",
+      "newFile": "Levitan_ozero28.JPG"
+    },
+    {
+      "id": 137,
+      "oldFile": "Claude_Monet_-_Femmes_au_jardin_(1866).jpg",
+      "newFile": "Claude Monet 024.jpg"
+    },
+    {
+      "id": 138,
+      "oldFile": "Claude_Monet_-_Gare_Saint-Lazare,_Paris_-_Google_Art_Project.jpg",
+      "newFile": "Claude Monet - The Saint-Lazare Station - Google Art Project.jpg"
+    },
+    {
+      "id": 139,
+      "oldFile": "Pierre-Auguste_Renoir,_Le_Moulin_de_la_Galette.jpg",
+      "newFile": "Renoir, Pierre-Auguste - Dance at Le Moulin de la Galette, 1876.jpg"
+    },
+    {
+      "id": 140,
+      "oldFile": "Pierre-Auguste_Renoir_-_Luncheon_of_the_Boating_Party_-_Google_Art_Project.jpg",
+      "newFile": "Pierre-Auguste Renoir - Luncheon of the Boating Party - Google Art Project.jpg"
+    },
+    {
+      "id": 141,
+      "oldFile": "Pierre-Auguste_Renoir_-_The_Large_Bathers_-_Philadelphia_Museum_of_Art.jpg",
+      "newFile": "Pierre-Auguste Renoir, French - The Large Bathers - Google Art Project.jpg"
+    },
+    {
+      "id": 142,
+      "oldFile": "Pierre-Auguste_Renoir,_La_Loge.jpg",
+      "newFile": "La Loge Pierre-Auguste Renoir 1874.jpg"
+    },
+    {
+      "id": 143,
+      "oldFile": "Edgar_Degas_-_La_Classe_de_danse.jpg",
+      "newFile": "Edgar Germain Hilaire Degas 021.jpg"
+    },
+    {
+      "id": 144,
+      "oldFile": "Edgar_Degas_-_In_a_Café_-_Google_Art_Project_2.jpg",
+      "newFile": "Edgar Degas - In a Café - Google Art Project 2.jpg"
+    },
+    {
+      "id": 145,
+      "oldFile": "Edgar_Degas_-_Les_repasseuses.jpg",
+      "newFile": "Degas. - Les repasseuses . Paris Musées 20230527165236.jpg"
+    },
+    {
+      "id": 146,
+      "oldFile": "Degas_-_Petite_danseuse_de_quatorze_ans_(Tate).jpg",
+      "newFile": "Little Dancer of Fourteen Years.jpg"
+    },
+    {
+      "id": 147,
+      "oldFile": "Camille_Pissarro_-_Boulevard_Montmartre,_morning,_cloudy_weather_-_Google_Art_Project.jpg",
+      "newFile": "Camille Pissarro - Boulevard Montmartre, Spring - Google Art Project.jpg"
+    }
+  ],
+  "unresolved": [
+    {
+      "id": 34,
+      "title": "La Noce paysanne",
+      "artist": "Pieter Bruegel l'Ancien",
+      "year": 1567,
+      "oldFile": "Pieter_Bruegel_d._Ä._011b.jpg"
+    },
+    {
+      "id": 40,
+      "title": "Autoportrait à la fourrure",
+      "artist": "Albrecht Dürer",
+      "year": 1500,
+      "oldFile": "Albrecht_Dürer_-_1500_self-portrait_(High_resolution_and_detail).jpg"
+    },
+    {
+      "id": 41,
+      "title": "Le Jeune Lièvre",
+      "artist": "Albrecht Dürer",
+      "year": 1502,
+      "oldFile": "Albrecht_Dürer_-_Hare,_1502_-_Google_Art_Project.jpg"
+    },
+    {
+      "id": 55,
+      "title": "Charles Ier au triple visage",
+      "artist": "Antoine van Dyck",
+      "year": 1636,
+      "oldFile": "Sir_Anthony_Van_Dyck_-_Charles_I_(1600-49)_-_Google_Art_Project.jpg"
+    },
+    {
+      "id": 69,
+      "title": "L'Atelier du peintre",
+      "artist": "Johannes Vermeer",
+      "year": 1666,
+      "oldFile": "Jan_Vermeer_-_The_Art_of_Painting_-_Google_Art_Project.jpg"
+    },
+    {
+      "id": 88,
+      "title": "La Raie",
+      "artist": "Jean-Baptiste-Siméon Chardin",
+      "year": 1728,
+      "oldFile": "La_Raie_-_Jean_Baptiste_Siméon_Chardin_-_Musée_du_Louvre_Peintures_INV_3197.jpg"
+    },
+    {
+      "id": 106,
+      "title": "Le Voyageur au-dessus d'une mer de nuages",
+      "artist": "Caspar David Friedrich",
+      "year": 1818,
+      "oldFile": "Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg"
+    },
+    {
+      "id": 111,
+      "title": "Le Téméraire remorqué à son dernier mouillage",
+      "artist": "J.M.W. Turner",
+      "year": 1839,
+      "oldFile": "Turner,_J._M._W._-_The_Fighting_Téméraire_tugged_to_her_last_Berth_to_be_broken.jpg"
+    },
+    {
+      "id": 112,
+      "title": "L'Incendie des Chambres du Parlement",
+      "artist": "J.M.W. Turner",
+      "year": 1835,
+      "oldFile": "Turner-The_Burning_of_the_Houses_of_Lords_and_Commons.jpg"
+    },
+    {
+      "id": 113,
+      "title": "L'Esclave",
+      "artist": "J.M.W. Turner",
+      "year": 1840,
+      "oldFile": "Slave-ship.jpg"
+    }
+  ]
+}
