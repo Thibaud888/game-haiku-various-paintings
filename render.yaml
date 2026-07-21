@@ -1,0 +1,13 @@
+# Déploiement du serveur multijoueur « Nuit au Musée » sur Render (plan gratuit).
+#
+# Le serveur héberge le WebSocket (Socket.io) ; le front + les images restent servis
+# par GitHub Pages. Voir la section « Déploiement » du README.
+#
+# Sur Render : New → Blueprint → connecter ce dépôt. Le plan free suffit (aucune CB).
+services:
+  - type: web
+    name: nuit-au-musee-mp
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start

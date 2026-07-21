@@ -14,13 +14,18 @@ la mission.
 
 ## Jouer
 
-**En ligne (1 clic)** : https://thibaud888.github.io/game-haiku-various-paintings/
+**Dans le navigateur** : https://thibaud888.github.io/game-haiku-various-paintings/
+(hébergé sur GitHub Pages — les modes solo et local sont instantanés).
 
 **En local** : ouvrir `index.html` dans un navigateur récent (Chrome,
 Firefox, Safari, Edge). Aucune installation ni serveur requis.
 
 Les images sont incluses dans le repo : le jeu fonctionne
 **hors-ligne** après clonage.
+
+**Multijoueur en ligne** (chacun sur son appareil) : nécessite le serveur
+Node (voir [Déploiement](#déploiement)). Une fois le serveur en ligne, le
+bouton « Jouer en ligne » crée ou rejoint une partie via un code à 4 lettres.
 
 **Mobile** : le jeu est jouable sur téléphone. L'écran de composition
 affiche les 6 tableaux en grille compacte en haut (toujours visibles
@@ -33,7 +38,7 @@ visible lors du défilement.
 |---|---|
 | Multi-joueurs local (passe-passe l'écran) | ✅ Disponible |
 | Solo | 🔜 À venir |
-| Multi-joueurs en ligne | 🔜 À venir |
+| Multi-joueurs en ligne | ✅ Disponible (serveur requis, voir Déploiement) |
 
 ## Règles
 
@@ -104,12 +109,42 @@ styles.css
 RULES.md
 js/
   app.js          — point d'entrée, délégation d'événements
-  game.js         — état et logique du jeu
+  game.js         — état et logique du jeu (local)
   ui.js           — rendu DOM
+  socket.js       — client multijoueur en ligne (Socket.io)
+  config.js       — URL du serveur multijoueur (à renseigner, cf. Déploiement)
   data/
     paintings.js  — ~250 tableaux (titre, artiste, URL Wikimedia)
     verses.js     — ~310 vers poétiques (pool, 16 distribués par joueur)
+server/
+  index.js        — serveur multijoueur WebSocket (Express + Socket.io)
+  rooms.js        — salles de jeu en mémoire
+  game.js         — logique de jeu côté serveur
 ```
+
+## Déploiement
+
+Deux morceaux, tous deux **gratuits** :
+
+- **Front + images → GitHub Pages** : tout le statique (jeu, tableaux) est servi
+  par Pages. Les modes solo et local ne dépendent d'aucun serveur.
+- **Serveur multijoueur → Render (plan gratuit)** : `server/index.js`
+  (Express + Socket.io) gère les parties en ligne.
+
+### Mettre le multijoueur en ligne
+
+1. Sur [Render](https://render.com) : **New → Blueprint**, connecter ce dépôt.
+   Le fichier [`render.yaml`](render.yaml) provisionne un web service **plan free**
+   (`npm start`). Aucune carte bancaire requise.
+2. Récupérer l'URL du service (p. ex. `https://nuit-au-musee-mp.onrender.com`).
+3. La coller dans [`js/config.js`](js/config.js) :
+   `window.ONLINE_SERVER_URL = 'https://…onrender.com';`
+   puis redéployer Pages (commit sur `main`).
+
+> ⏱️ **Réveil à froid** : sur le plan gratuit, le serveur s'endort après 15 min
+> sans trafic et met **~1 min à se réveiller**. Le premier joueur à créer une partie
+> après une pause patiente le temps du réveil, puis tout est fluide. Le mode local
+> n'est jamais concerné.
 
 ## Licence
 
