@@ -45,9 +45,35 @@ const Socket = (() => {
       : { duration: 'standard', difficulty: 'standard', story: 'immersif', timerEnabled: false, timerMinutes: 3 };
   }
 
+  // Where the online mode connects. On the statically-hosted front (GitHub Pages)
+  // there is no same-origin server, so we dial the configured Render URL; in local
+  // dev / self-host the server serves the page, so we stay same-origin.
+  function _serverTarget() {
+    const host = location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return { url: undefined, ok: true };
+    const cfg = ((typeof window !== 'undefined' && window.ONLINE_SERVER_URL) || '').trim();
+    if (!cfg) return { url: undefined, ok: false };
+    if (location.origin === cfg) return { url: undefined, ok: true };
+    return { url: cfg, ok: true };
+  }
+
   function _init() {
-    if (_socket) return;
-    _socket = io();
+    if (_socket) return true;
+    const target = _serverTarget();
+    if (!target.ok) {
+      UI.showToast('Le multijoueur en ligne n’est pas encore configuré sur cette version.', 'error');
+      return false;
+    }
+    _socket = io(target.url);
+
+    // Free hosting (Render) spins the server down after ~15 min idle; the first
+    // connection then takes ~1 min to wake it. Warn once so the wait is legible.
+    let _warnedWake = false;
+    _socket.on('connect_error', () => {
+      if (_warnedWake) return;
+      _warnedWake = true;
+      UI.showToast('Réveil du serveur en ligne… (jusqu’à ~1 min au premier essai)');
+    });
 
     _socket.on('room-joined', ({ code, playerId, players }) => {
       _myPlayerId = playerId;
@@ -73,6 +99,8 @@ const Socket = (() => {
     _socket.on('join-error', ({ message }) => {
       UI.showToast(message, 'error');
     });
+
+    return true;
   }
 
   // Map the per-player server view into the state shape the local UI uses.
@@ -271,7 +299,7 @@ const Socket = (() => {
   // ── Public ────────────────────────────────────────────
 
   function emit(event, data) {
-    _init();
+    if (!_init()) return;
     _socket.emit(event, data);
   }
 

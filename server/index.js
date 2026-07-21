@@ -10,7 +10,14 @@ const {
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server);
+const io     = new Server(server, {
+  // Allow the statically-hosted front (GitHub Pages) to open a cross-origin socket.
+  // Same-origin (local dev / self-host) is always allowed regardless of this list.
+  cors: {
+    origin: ['https://thibaud888.github.io', /^http:\/\/localhost(:\d+)?$/, /^http:\/\/127\.0\.0\.1(:\d+)?$/],
+    methods: ['GET', 'POST'],
+  },
+});
 
 // Serve static files from project root. Strong caching on assets (notably the
 // 248 local paintings) so the browser reuses them instead of revalidating on
