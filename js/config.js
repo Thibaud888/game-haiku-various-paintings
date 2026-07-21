@@ -9,4 +9,4 @@
 //
 // → Après avoir créé le service sur Render, copie ici l'URL affichée par Render, p. ex. :
 //     window.ONLINE_SERVER_URL = 'https://nuit-au-musee-mp.onrender.com';
-window.ONLINE_SERVER_URL = '';
+window.ONLINE_SERVER_URL = 'https://nuit-au-musee-mp.onrender.com';
