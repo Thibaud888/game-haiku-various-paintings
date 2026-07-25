@@ -26,6 +26,8 @@
     leur mécanisme, puis `**Recommandation :** option N — pourquoi`. Détail technique en repli
     `<details>` sous la question, jamais au-dessus. Il répond par un simple numéro.
   - Test : si quelqu'un qui ne code pas ne peut pas choisir en lisant la partie haute, c'est raté.
+- **Écris l'outil, pas l'output** — à la 3e récurrence d'une même tâche, écris un script
+  réutilisable (`scripts/`), pas juste le résultat.
 
 ## Stack & commandes
 - Front : HTML/CSS/JS purs (`index.html`, `js/`, `styles.css`), images dans `images/`.
