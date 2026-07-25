@@ -7,7 +7,7 @@
 - **Lis `MAP.md` avant toute exploration** ; n'explore que ce qu'elle ne couvre pas.
 - **Aucune session ne rend la main sans avoir vérifié** : lance `node scripts/verify.mjs`
   (syntaxe de tout le JS front + serveur) et regarde le résultat avant de conclure.
-- Branche + PR **vers `main`**, jamais de push direct sur `main`. Commits **en français**.
+- **Branche + PR** — vers `main`, jamais de push direct sur `main`. Commits **en français**.
 - **1 session = 1 item = 1 PR** — un item de `BACKLOG.md` par session ; mets à jour
   `BACKLOG.md` en fin de session.
 - **La PR se merge automatiquement dès que la CI est verte** (pas d'attente de relecture par
